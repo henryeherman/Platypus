@@ -1,1 +1,6 @@
+*.vcd
+*.out
 *.swp
+*.ignore
+ignorei
+build
