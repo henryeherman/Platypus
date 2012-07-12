@@ -1,5 +1,6 @@
 `timescale 1ns/1ps
-
+`define TESTRX
+`define TESTTX
 
 module ft2232h_tb;
 wire clkout_w;
@@ -28,6 +29,7 @@ reg rdreset;
 
 initial begin
         $dumpvars;
+        $readmemh("testbench/toFifo.tv", dataToFifo);
         rdreset = 0;
         ii = 0;
         data_r_in = 0;
@@ -40,18 +42,16 @@ initial begin
         #10;
         rdreset = 0;
        
-        //$readmemh("testbench/toFifo.tv", dataToFifo);
         #600;
         $finish;
 end
 
 
+`ifdef TESTRX
 always @(negedge clkout_w, posedge rdreset) begin
         if(rdreset) begin
-                $display("Reset RD");
                 rdstate <= EMPTY;
                 rdnextstate <=EMPTY;
-                        
         end else begin 
                 rdstate <= rdnextstate;
         end
@@ -62,38 +62,23 @@ always @(rxf_w, rdstate) begin
         case (rdstate)
                 EMPTY: begin
                         oe_r<=1; rd_r<=1;
-                        if(rxf_w == 0) begin
-                                //oe_r<= 0;
-                                //$display("Go PREPARE READ");
-                                rdnextstate = PREPAREREAD;
-                        end //else $display("Empty");
+                        if(rxf_w == 0) rdnextstate = PREPAREREAD;
                 end                
                 PREPAREREAD: begin
-                        //rd_r = 0;
                         oe_r<=0; rd_r<=1;
-                        //$display("Prepare to Read");      
-                        if(rxf_w == 0) begin 
-                                //$display("Go READ");
-                                rdnextstate = READ;
-                        end else  begin
-                        //$display("GO EMPTY");
-                                rdnextstate = EMPTY;
-                        end
-
+                        if(rxf_w == 0) rdnextstate = READ;
+                        else rdnextstate = EMPTY;                        
                 end
                 READ: begin
                         oe_r<=0; rd_r<=0;
-                        if(rxf_w == 1) begin
-                                //$display("Go EMPTY");
-                                rdnextstate = EMPTY;
-                        end //else $display("Reading");
-
+                        if(rxf_w == 1) rdnextstate = EMPTY;
                 end                       
                 default: begin
                    rd_r<=1; oe_r<=1;
                 end
         endcase
 end
+`endif
 
 ft2232h uft2232h(
 .data(data_r),
