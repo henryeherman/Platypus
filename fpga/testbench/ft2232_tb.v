@@ -34,28 +34,17 @@ initial begin
         wr_r = 1;
         oe_r = 1;        
         rd_r = 1;
-        rdstate = PAUSE; 
-        #300;
+        //rdstate = PAUSE; 
+        #10;
         rdreset = 1;
-        #1;
+        #10;
         rdreset = 0;
        
         //$readmemh("testbench/toFifo.tv", dataToFifo);
-        #2000;
+        #600;
         $finish;
 end
 
-/*
-always @(negedge clkout_w) begin
-        if ((txe_w == 0 && rxf_w==1) && (ii < 8)) begin
-                wr_r = 0;
-                data_r_in<= dataToFifo[ii];
-                ii = ii + 1;
-        end else begin
-                wr_r = 1;
-        end
-end
-*/
 
 always @(negedge clkout_w, posedge rdreset) begin
         if(rdreset) begin
