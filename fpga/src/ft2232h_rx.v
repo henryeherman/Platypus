@@ -9,12 +9,19 @@ module ft2232h_rx(
 data,
 rxf_o,
 rd_i,
+oe_i,
 clk_i
 );
 
+parameter OE_EVENT       = 2'b00;
+parameter RDI_EVENT      = 2'b01;
+parameter READING        = 2'b10;
+
+
 output wire [7:0] data;
-output rxf_o;
+output wire rxf_o;
 input rd_i;
+input oe_i;
 input clk_i;
 
 
@@ -29,8 +36,9 @@ reg [8*`MAX_LINE_LENGTH:0] line; /* Line of text read from file */
 reg [7:0] fifo_data_in;
 wire [7:0] fifo_data_out;
 reg wrreq;
-reg rdreq;
-reg rdclk;
+wire rdreq;
+reg rdreq_r;
+wire rdclk;
 reg wrclk;
 reg aclr;
 wire rdempty;
@@ -40,8 +48,15 @@ wire rdfull;
 
 
 
+always @(rdclk) begin
+        if(rdclk == `LO && oe_i == `LO && rdreq_r==`LO) rdreq_r = `HI;
+        else if(rdclk == `LO && rdreq_r == `LO) rdreq_r = `LO;
+        else if(rd_i == `LO) rdreq_r = `HI;
+        else if(rd_i == `HI || oe_i == `HI) rdreq_r = `LO;
+end
+
 // Asynchronous "aFifo" to allow data transmission between two clock domains
-aFifo #(.DATA_WIDTH(8), .ADDRESS_WIDTH(4)) ufifo 
+aFifo_negedge #(.DATA_WIDTH(8), .ADDRESS_WIDTH(4)) ufifo 
         (.q(fifo_data_out),
          .rdempty(rdempty),
          .rdreq(rdreq),
@@ -56,18 +71,17 @@ aFifo #(.DATA_WIDTH(8), .ADDRESS_WIDTH(4)) ufifo
 // Initialize and read in data from file to mimic data from USB host
 initial
     begin : file_block
-    $dumpvars;
+    rdreq_r = 0;
     aclr = 0;#5;
     wrreq = 0; 
     wrclk = 0;
-    rdclk = 0;
-    rdreq = 0;
+    //rdreq = 0;
     fifo_data_in = 0;
     aclr = 1; #16;
     aclr = 0; #8;
 
-    $timeformat(-9, 3, "ns", 6);
-    $display("time bin decimal hex");
+    $timeformat(-9, 2, "ns", 6);
+    //$display("time bin decimal hex");
     file = $fopenr("fromPc.tv");
     if (file == `NULL) begin
        $display("Could not open file"); 
@@ -106,33 +120,21 @@ initial
         end // while not EOF
 
     $fclose(file);
-    #128;$finish;
     
     end // initial
-
-always begin
-        rdclk = !rdclk; #16;
-end
-
-always @ (negedge rdclk) begin
-           
-            if(!rdempty ) begin
-                rdreq = #1 1;
-            end else rdreq = #1 0;
-end
-
 
 
 // Display changes to the signals
 always @(*)
-    $display("HEX: %t %h", $realtime, hex);
+    $display("RX from PC:\t %t \t%H", $realtime, hex[7:0]);
 
-always @(*)
-    $display("FIFO OUT: %d", fifo_data_out);
+//always @(*)
+//    $display("FIFO OUT: %d", fifo_data_out);
 
 assign data = fifo_data_out;
-assign rxf_o = rdreq;
-
+assign rdclk = clk_i;
+assign rxf_o = rdempty;
+//assign rdreq = !rd_i; 
+assign rdreq = rdreq_r;
 endmodule // read_pattern
-
 

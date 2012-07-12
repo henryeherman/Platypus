@@ -1,5 +1,6 @@
 *.vcd
 *.out
+*.swo
 *.swp
 *.ignore
 ignorei

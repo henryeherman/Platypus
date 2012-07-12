@@ -5,7 +5,7 @@
 
 module ft2232h(
 data,
-rfx_o,
+rxf_o,
 txe_o,
 rd_i,
 wr_i,
@@ -19,7 +19,7 @@ inout [7:0] data;
 wire [7:0] data_out;
 wire [7:0] data_in;
 
-output reg rfx_o;
+output wire rxf_o;
 output reg txe_o;
 input rd_i;
 input wr_i;
@@ -29,30 +29,41 @@ input sim_rxe_i;
 
 integer outfile;
 
-// Setup RX Process
+//Setup RX Module
+// FROM PC!
+ft2232h_rx rxmod(
+        .data(data_out),
+        .rxf_o(rxf_o),
+        .rd_i(rd_i),
+        .oe_i(oe_i),
+        .clk_i(clkout_o)
+);
+
+// TO PC!
+ft2232h_tx txmod(
+        .data(data_in),
+        .wr_i(wr_i),
+        .clkout_i(clkout_o),
+        .txe_i(txe_o)
+);
+
+// Setup TX Process
 initial begin
-        outfile = $fopen("simulation/toPc.tv", "w");
         clkout_o = `LO;
-        txe_o =`HI; #50;
-        txe_o =`LO ; #10;
+        txe_o = `LO; 
 end
 
 // USB Clock output
 always begin
         clkout_o = !clkout_o; #16;
 end
-        
-// RX Process
-always @ (posedge clkout_o) begin
-        if ((txe_o == `LO) && (wr_i == `LO)) begin
-                $fwrite(outfile,"%x\n", data_in);
-                $display("RECV %x", data_in); 
-        end
-end
+       
+
+assign data_in = data;
 
 assign data = (!oe_i) ? data_out : 8'bz;
 
-assign data_in = (!wr_i) ? data : 8'bz;
+assign data_in = (!wr_i & oe_i) ? data : 8'bz;
 
 
 endmodule
