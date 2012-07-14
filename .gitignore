@@ -5,4 +5,5 @@
 *.vcd
 *.ignore
 ignorei
+fpga/simulation
 build
