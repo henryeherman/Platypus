@@ -82,7 +82,7 @@ initial
 
     $timeformat(-9, 2, "ns", 6);
     //$display("time bin decimal hex");
-    file = $fopenr("fromPc.tv");
+    file = $fopenr("testbench/fromPc.tv");
     if (file == `NULL) begin
        $display("Could not open file"); 
        $finish;

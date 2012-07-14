@@ -2,6 +2,7 @@
 *.out
 *.swo
 *.swp
+*.vcd
 *.ignore
 ignorei
 build

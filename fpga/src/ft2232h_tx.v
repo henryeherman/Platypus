@@ -22,7 +22,7 @@ integer outfile;
 // Setup TX Process
 initial begin
         $timeformat(-9, 2, "ns", 6);
-        outfile = $fopen("simulation/toPc.tv", "w");
+        outfile = $fopen("testbench/toPc.tv", "w");
 end
 
 // TX Process
