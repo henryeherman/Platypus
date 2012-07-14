@@ -36,15 +36,25 @@ initial begin
         wr_r = 1;
         oe_r = 1;        
         rd_r = 1;
-        //rdstate = PAUSE; 
         #10;
         rdreset = 1;
         #10;
         rdreset = 0;
-       
         #600;
         $finish;
 end
+
+`ifdef TESTTX
+always @(negedge clkout_w) begin
+        if ((rxf_w == 1) && (txe_w==0) && (ii<8)) begin
+                wr_r = 0;
+                data_r_in<= dataToFifo[ii];
+                ii = ii + 1;
+        end else wr_r = 1;
+end
+`endif
+
+
 
 
 `ifdef TESTRX

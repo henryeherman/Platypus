@@ -1,8 +1,8 @@
 `timescale 1ns/1ps
 
-`define LO     0
-`define HI     1
-
+`define LO      0
+`define HI      1
+`define NULL    0
 
 
 module ad7606(
@@ -24,21 +24,57 @@ input convstw_i;
 input cs_i;
 input rd_i;
 output reg busy_o;
-output reg frstdata_o;
+output wire frstdata_o;
+reg frstdata_r;
+
 input reset_i;
-input os_i;
+input wire [2:0] os_i;
+
+integer outfile;
 
 reg [31:0] conv_counter = 0;
 reg [31:0] reset_counter = 0;
+reg  [3:0] chancount;
+
+initial begin
+        outfile = $fopenw("adcval.out");
+        if (outfile == `NULL) begin
+                $display("Could Not open file");
+                $finish;
+        end
+        chancount = 0;
+end
 
 
 always @ (posedge reset_i, posedge convstw_i) begin
         if(reset_i == 1 ) begin
                 busy_o= 0;
-                db_o = 16'bz;
+                frstdata_r = 0;
+                db_o = #45 16'bz;
         end else if(convstw_i == 1) begin
                 #45 busy_o = 1;
-                #4000 busy_o = 0;
+
+                if (os_i == 3'b000)
+                  #4000; //200kHz NO OS
+                else if(os_i == 3'b001)
+                  #9100; //100kHz x2 OS
+                else if(os_i == 3'b010)
+                  #18800; //50kHz x4 OS
+                else if(os_i == 3'b011)
+                  #39000; //25kHz x8 OS
+                else if(os_i == 3'b100)
+                  #78000; //12.5kHz x16 OS
+                else if(os_i == 3'b101)
+                  #158000; //6.25kHz x32 OS
+                else if(os_i == 3'b110)
+                  #315000; //3.125kHz x64 OS
+                else begin
+                  $display("Invalid Oversampling selection");
+                  $finish;
+                end                  
+
+
+                busy_o = 0;
                 db_o = 0;
         end
 end
@@ -49,17 +85,12 @@ end
 
 always @ (negedge rd_i, posedge cs_i) begin
         if(cs_i == 0) begin
-                if(db_o < 9) begin
-                        db_o <= db_o + 1;
-                end
-                
-                if(db_o == 1) begin
-                        frstdata_o <= 1;
-                end else if(db_o > 8) begin
-                        frstdata_o <= 1'bz;
-                end else begin
-                        frstdata_o <=0;
-                end
+                if (chancount < 8)
+                  db_o = #16 $random;
+                $fwrite(outfile, "%04X\n", db_o);
+                chancount = chancount  + 1;
+                if(chancount == 8) 
+                        chancount = 0;
 
         end else begin
                 db_o = 16'bz;
@@ -68,7 +99,12 @@ always @ (negedge rd_i, posedge cs_i) begin
 end
 
 
+always @(chancount) begin  
+  if (chancount==1) frstdata_r <= #16 1;
+  else frstdata_r<=0;
+end
 
+assign frstdata_o = (cs_i) ? 1'bz : frstdata_r;
 
 
 endmodule

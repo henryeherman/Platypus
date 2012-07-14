@@ -8,13 +8,14 @@ reg convstw_r;
 wire [15:0] db_r;
 reg rd_r;
 reg cs_r;
-
+wire frstdata_w;
+reg [2:0] os_r;
 
 initial begin
         $dumpvars;
         rd_r = 1;
         cs_r = 1;
-
+        os_r = 3'b000;       
         reset_r = 0; #1;
         convstw_r=1; 
         reset_r = 1; #50;
@@ -22,8 +23,12 @@ initial begin
         #50;
         convstw_r = 0; #50;
         convstw_r = 1;
-        #5000;
+        #4500;
+        convstw_r = 0; #50;
+        convstw_r = 1;
+        #4500;
         $finish;
+
 end
 
 always @(negedge busy_r) begin
@@ -34,7 +39,7 @@ always @(negedge busy_r) begin
                 rd_r=0; #21;
                 rd_r=1;
           end
-          cs_r=1;
+          cs_r= #10 1;
         end
 end
 
@@ -46,7 +51,9 @@ ad7606 uad7606(
 .busy_o(busy_r),
 .rd_i(rd_r),
 .cs_i(cs_r),
-.db_o(db_r)
+.db_o(db_r),
+.frstdata_o(frstdata_w),
+.os_i(os_r)
 );
 
 
