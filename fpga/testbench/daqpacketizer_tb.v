@@ -24,7 +24,7 @@ end
 
 // Generate 200MHz clock
 always begin
-        clk_r = !clk_r; #5;
+        clk_r = !clk_r; #2.5;
 end
 
 
