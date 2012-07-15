@@ -8,6 +8,7 @@
 //            article can be downloaded from the
 //            Xilinx website. It has some minor modifications.
 //=========================================
+// http://www.asic-world.com/examples/verilog/asyn_fifo.html
 
 `timescale 1ns/1ps
 
@@ -37,6 +38,10 @@ module aFifo
     reg                                 Status;
     wire                                PresetFull, PresetEmpty;
     
+    initial begin
+        $display("Address width: %d\t Data width: %d\n", ADDRESS_WIDTH, DATA_WIDTH);
+    end
+
     //////////////Code///////////////
     //Data ports logic:
     //(Uses a dual-port RAM).
@@ -56,7 +61,7 @@ module aFifo
     assign NextReadAddressEn  = rdreq  & ~rdempty;
            
     //Addreses (Gray counters) logic:
-    GrayCounter GrayCounter_pWr
+    GrayCounter #(.COUNTER_WIDTH(ADDRESS_WIDTH)) GrayCounter_pWr
        (.GrayCount_out(pNextWordToWrite),
        
         .Enable_in(NextWriteAddressEn),
@@ -65,7 +70,7 @@ module aFifo
         .Clk(wrclk)
        );
        
-    GrayCounter GrayCounter_pRd
+    GrayCounter #(.COUNTER_WIDTH(ADDRESS_WIDTH)) GrayCounter_pRd
        (.GrayCount_out(pNextWordToRead),
         .Enable_in(NextReadAddressEn),
         .Clear_in(clear),

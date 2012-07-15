@@ -19,7 +19,8 @@ os_i
 
 reg [2:0] rdstate, rdnextstate; 
 reg [1:0] convstate, convnextstate;
-output reg [15:0] db_o;
+output wire [15:0] db_o;
+reg [15:0] db_r;
 input convstw_i;
 input cs_i;
 input rd_i;
@@ -50,7 +51,7 @@ always @ (posedge reset_i, posedge convstw_i) begin
         if(reset_i == 1 ) begin
                 busy_o= 0;
                 frstdata_r = 0;
-                db_o = #45 16'bz;
+                db_r = #45 16'bz;
         end else if(convstw_i == 1) begin
                 #45 busy_o = 1;
 
@@ -75,7 +76,7 @@ always @ (posedge reset_i, posedge convstw_i) begin
 
 
                 busy_o = 0;
-                db_o = 0;
+                db_r = 0;
         end
 end
 
@@ -86,14 +87,14 @@ end
 always @ (negedge rd_i, posedge cs_i) begin
         if(cs_i == 0) begin
                 if (chancount < 8)
-                  db_o = #16 $random;
+                  db_r = #16 $random;
                 $fwrite(outfile, "%04X\n", db_o);
                 chancount = chancount  + 1;
                 if(chancount == 8) 
                         chancount = 0;
 
         end else begin
-                db_o = 16'bz;
+                db_r = 16'bz;
         end
         
 end
@@ -105,7 +106,7 @@ always @(chancount) begin
 end
 
 assign frstdata_o = (cs_i) ? 1'bz : frstdata_r;
-
+assign db_o = (cs_i) ? 16'bz : db_r;
 
 endmodule
 
