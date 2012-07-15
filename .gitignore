@@ -6,4 +6,5 @@
 *.ignore
 ignorei
 fpga/simulation
+fpga/simulation/*
 build
