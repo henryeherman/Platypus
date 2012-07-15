@@ -22,7 +22,6 @@ initial begin
         $finish;
 end
 
-
 // Generate 200MHz clock
 always begin
         clk_r = !clk_r; #5;
