@@ -21,6 +21,7 @@ AD7606TBFILES = $(TBPATH)/ad7606_tb.v \
 		
 DAQPKTBFILES = $(TBPATH)/daqpacketizer_tb.v \
 	       $(SOURCEPATH)/daqpacketizer.v \
+	       $(SOURCEPATH)/daqtriggerctrl.v \
 	       $(SOURCEPATH)/aFifo.v \
 	       $(SOURCEPATH)/GrayCounter.v \
 	       $(SOURCEPATH)/ad7606.v

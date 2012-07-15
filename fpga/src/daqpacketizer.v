@@ -14,7 +14,7 @@ wire frstdata_w;
 input wire reset_i;
 
 //AD7606 Signals
-reg conv_clk_o;
+wire conv_clk_o;
 wire busy_w;
 reg rd_r;
 reg [3:0] cs_r;
@@ -53,7 +53,7 @@ always @(posedge clk_i) begin
         clkcount = clkcount + 1;
 end
 */
-
+/*
 always @(posedge clk_i, posedge reset_i) begin
         if (reset_i) begin
                 trigger_state = IDLE;
@@ -96,7 +96,7 @@ always @(posedge clk_i, posedge reset_i) begin
         end
 end
 */
-
+/*
 always @(trigger_state) begin
         case(trigger_state)
                 IDLE: begin
@@ -114,7 +114,7 @@ always @(trigger_state) begin
         endcase
 end
 
-
+*/
 
 
 always @(posedge reset_i) begin
@@ -122,6 +122,13 @@ always @(posedge reset_i) begin
         cs_r <= 4'b1;
         rd_r <= `HI;
 end
+
+daqtriggerctrl udaqtrig(
+        .clk_i(clk_i),
+        .busy_i(busy_w),
+        .conv_clk_o(conv_clk_o),
+        .reset_i(reset_i)
+);
 
 ad7606 uad7606_1
         (.convstw_i(conv_clk_o),
