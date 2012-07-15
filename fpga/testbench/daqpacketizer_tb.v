@@ -7,11 +7,13 @@ module daqpacketizer_tb;
 reg clk_r;
 reg [2:0] os_sel_r;
 reg reset_r;
+reg en_r;
 
 // Initialize Packetizer and Test
 initial begin
         $dumpvars;
         clk_r = 1;
+        en_r = 1;
         os_sel_r = 3'b0;
         reset_r = 0;
         reset_r = 1; #10;
@@ -30,7 +32,8 @@ end
 daqpacketizer udaqpkt(
 .clk_i(clk_r),
 .os_sel_i(os_sel_r),
-.reset_i(reset_r)
+.reset_i(reset_r),
+.en_i(en_r)
 );
 
 endmodule
