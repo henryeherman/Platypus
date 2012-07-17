@@ -38,9 +38,9 @@ module aFifo
     reg                                 Status;
     wire                                PresetFull, PresetEmpty;
     
-    initial begin
-        $display("Address width: %d\t Data width: %d\n", ADDRESS_WIDTH, DATA_WIDTH);
-    end
+    //initial begin
+    //    $display("Address width: %d\t Data width: %d\n", ADDRESS_WIDTH, DATA_WIDTH);
+    //end
 
     //////////////Code///////////////
     //Data ports logic:

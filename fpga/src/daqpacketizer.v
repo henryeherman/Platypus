@@ -5,15 +5,24 @@ module daqpacketizer(
 clk_i,
 os_sel_i,
 reset_i,
-en_i
+en_i,
+db_o,
+rdreq_o,
+rdclk_o,
+fifo_out_clk,
+fifo_out_empty,
+fifo_out_req
 );
 
 parameter ADCCOUNT = 8;
 
-parameter BUSY = 3'b000;
-parameter FIRST_DATA = 3'b001;
-parameter COUNT_VALS = 3'b010;
-parameter COMPLETE = 3'b100;
+parameter WAIT_ON_TRIG = 3'b000;
+parameter WAIT_ON_BUSY_HIGH = 3'b001;
+parameter WAIT_ON_BUSY_LOW = 3'b010;
+parameter FIRST_DATA = 3'b011;
+parameter READ = 3'b100;
+parameter READ_END = 3'b101;
+parameter COMPLETE = 3'b110;
 
 reg [2:0] read_state;
 reg [2:0] read_nextstate;
@@ -26,13 +35,23 @@ input wire [2:0] os_sel_i;
 wire frstdata_w;
 input wire reset_i;
 input wire en_i;
+output wire [15:0] db_o;
+output wire rdreq_o;
+output wire rdclk_o;
+
+//  TEMPS
+input wire fifo_out_clk;
+output wire fifo_out_empty;
+input wire fifo_out_req;
 
 //AD7606 Signals
-wire conv_clk_o;
+wire conv_clk_w;
 wire busy_w;
 wire rd_w;
 reg [3:0] cs_r;
 wire [15:0] db_w;
+
+
 
 reg rd_clk;
 reg rd_en;
@@ -55,69 +74,104 @@ reg [1:0] trigger_nextstate;
 always@(posedge clk_i, reset_i) begin
         if(reset_i) begin
                 rd_clk <= 0;
-                rd_en <= 1;
                 clkcount <= 0;
         end else begin
                 clkcount = clkcount + 1;
-                if (clkcount > 2) begin
-                        rd_clk <= !rd_clk;
+                if (clkcount > 2 && rd_clk==1) begin
+                        rd_clk <= 0;
+                        clkcount <= 0;
+                end else if(clkcount >3 && rd_clk ==0) begin
+                        rd_clk <= 1;
                         clkcount <= 0;
                 end
         end
 end
 
+
 assign rd_w = (rd_en) ? rd_clk : `HI;
 
-always @(posedge reset_i) begin
-        cs_r <= 4'b1;
+always @(reset_i) begin
+        cs_r <= 4'b1;        
 end
 
 
-always @(posedge clk_i, reset_i) begin
+always @(negedge rd_clk, reset_i) begin
 
         if (reset_i) begin
-                read_nextstate <= BUSY;
-                read_state <= BUSY;
+                read_nextstate <= WAIT_ON_TRIG;
+                read_state <= WAIT_ON_TRIG;
         end  begin
                 read_state <= read_nextstate;
         end        
 end
 
-always @(negedge busy_w) begin
-        read_nextstate <= FIRST_DATA;
-end
 
-always @(negedge rd_clk, read_state) begin
+
+always @(conv_clk_w, busy_w, frstdata_w, read_state, adc_count) begin
         case(read_state)
-                BUSY: begin
-                        rd_en <= 0;
-                        cs_r[0] <= 1;                      
-                        adc_count <= 0;
+                WAIT_ON_TRIG: begin
+                        cs_r[0] <=1;
+                        rd_en = 0;
+                        if(conv_clk_w == `LO)
+                                read_nextstate = WAIT_ON_BUSY_HIGH;
                 end
-                FIRST_DATA: begin
-                        rd_en <= 1;
-                        cs_r[0] <= 0;
-                        if (adc_count > 7) 
-                                read_nextstate = BUSY; 
-                        adc_count = adc_count + 1; 
+                WAIT_ON_BUSY_HIGH: begin
+                        if (busy_w == `HI) begin
+                                read_nextstate = WAIT_ON_BUSY_LOW;
+                        end
+                end
+                WAIT_ON_BUSY_LOW: begin
+                      if (busy_w == `LO) begin
+                              read_nextstate = READ;
+                      end
+                end
+                READ: begin
+                        cs_r[0] = 0;
+                        rd_en = 1;                              
+
+                        if (adc_count > 7)
+                                read_nextstate = READ_END;
+                end
+                READ_END: begin
+                        rd_en  = 0;
+                        cs_r[0]<=1;
+                        if (adc_count > 8)
+                                read_nextstate = WAIT_ON_TRIG;
                 end
                 default: begin
-                        read_nextstate = BUSY;
+                        read_nextstate = WAIT_ON_TRIG;
                 end
         endcase
 end 
 
 
+always @(posedge rd_clk) begin
+        if (read_state == READ || read_state == READ_END) begin
+                if (adc_count > 8) 
+                        adc_count = 0;
+                else
+                        adc_count = adc_count +1;
+        end else
+                adc_count = 0;
+                        
+end
+
+
+
+assign db_o = db_w;
+assign rdclk_o = rd_w;
+assign rdreq_o = rd_en;
+
 daqtriggerctrl udaqtrig(
         .clk_i(clk_i),
         .busy_i(busy_w),
-        .conv_clk_o(conv_clk_o),
+        .conv_clk_o(conv_clk_w),
         .reset_i(reset_i),
         .en_i(en_i)
 );
 
 ad7606 uad7606_1
-        (.convstw_i(conv_clk_o),
+        (.convstw_i(conv_clk_w),
         .reset_i(reset_i),
         .busy_o(busy_w),
         .rd_i(rd_w),
@@ -127,16 +181,16 @@ ad7606 uad7606_1
         .os_i(os_sel_i)
         );
 
-aFifo #(.DATA_WIDTH(8), .ADDRESS_WIDTH(6)) ufifo 
+daqFifo #(.ADDRESS_WIDTH(6)) ufifo 
         (//.q(fifo_data_out),
-        //.rdempty(rdempty),
-        //.rdreq(rdreq),
-        //.rdclk(rdclk),
-        //.data(data_in),
+        .rdempty(fifo_out_empty),
+        .rdreq(fifo_out_req),
+        .rdclk(fifo_out_clk),
+        .data(db_w),
         .wrfull(wrfull),
-        .wrreq(wrreq),
-        .wrclk(wrclk),
-        .clear(reset)
+        .wrreq(rdreq_o),
+        .wrclk(rd_w),
+        .clear(reset_i)
         );
 
 

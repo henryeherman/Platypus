@@ -1,6 +1,8 @@
 `timescale 1ns/1ps
 `define HI      1
 `define LO      0
+
+
 module daqtriggerctrl(
 clk_i,
 busy_i,
@@ -15,8 +17,8 @@ parameter TRIGGER = 2'b10;
 parameter PAUSE = 2'b11;
 
 //TODO: Calculate these in Hertz using macro
-parameter CYCLES_TIL_TRIGGER_ON = 500;
-parameter CYCLES_TIL_TRIGGER_OFF = 50;
+parameter CYCLES_TIL_TRIGGER_ON = 990;
+parameter CYCLES_TIL_TRIGGER_OFF = 10;
 
 input wire clk_i;
 input wire  busy_i;
@@ -27,7 +29,7 @@ input wire en_i;
 reg [1:0] trigger_state;
 reg [1:0] trigger_nextstate;
 
-reg [9:0] count_til_trigger_on;
+reg [11:0] count_til_trigger_on;
 reg [9:0] count_til_trigger_off;
 
 

@@ -84,24 +84,21 @@ always @ (negedge rd_i) begin
         
 end
 
-always @ (negedge rd_i, posedge cs_i) begin
+always @ (negedge rd_i, negedge cs_i) begin
         if(cs_i == 0) begin
-                if (chancount < 8)
+                if (chancount <= 8)
                   db_r = #16 $random;
                 $fwrite(outfile, "%04X\n", db_o);
                 chancount = chancount  + 1;
-                if(chancount == 8) 
+                if(chancount > 8) 
                         chancount = 0;
 
-        end else begin
-                db_r = 16'bz;
         end
-        
 end
 
 
 always @(chancount) begin  
-  if (chancount==1) frstdata_r <= #16 1;
+  if (chancount==1) frstdata_r <= 1;
   else frstdata_r<=0;
 end
 
