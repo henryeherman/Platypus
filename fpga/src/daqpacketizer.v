@@ -53,7 +53,7 @@ wire [15:0] db_w;
 
 
 
-reg rd_clk;
+wire rdclk_w;
 reg rd_en;
 
 //Fifo Signals
@@ -69,33 +69,12 @@ reg [1:0] trigger_state;
 reg [1:0] trigger_nextstate;
 
 
-
-// Generate 15ns pulses for read clock
-always@(posedge clk_i, reset_i) begin
-        if(reset_i) begin
-                rd_clk <= 0;
-                clkcount <= 0;
-        end else begin
-                clkcount = clkcount + 1;
-                if (clkcount > 2 && rd_clk==1) begin
-                        rd_clk <= 0;
-                        clkcount <= 0;
-                end else if(clkcount >3 && rd_clk ==0) begin
-                        rd_clk <= 1;
-                        clkcount <= 0;
-                end
-        end
-end
-
-
-assign rd_w = (rd_en) ? rd_clk : `HI;
-
 always @(reset_i) begin
         cs_r <= 4'b1;        
 end
 
 
-always @(negedge rd_clk, reset_i) begin
+always @(negedge rdclk_w, reset_i) begin
 
         if (reset_i) begin
                 read_nextstate <= WAIT_ON_TRIG;
@@ -145,7 +124,7 @@ always @(conv_clk_w, busy_w, frstdata_w, read_state, adc_count) begin
 end 
 
 
-always @(posedge rd_clk) begin
+always @(posedge rdclk_w) begin
         if (read_state == READ || read_state == READ_END) begin
                 if (adc_count > 8) 
                         adc_count = 0;
@@ -159,8 +138,16 @@ end
 
 
 assign db_o = db_w;
-assign rdclk_o = rd_w;
+assign rdclk_o = rdclk_w;
 assign rdreq_o = rd_en;
+
+daqrdclk udaqrdclk(
+.clk_i(clk_i),
+.reset_i(reset_i),
+.clk_en_o(rd_w),
+.clk_o(rdclk_w),
+.en_i(rd_en)
+);
 
 daqtriggerctrl udaqtrig(
         .clk_i(clk_i),

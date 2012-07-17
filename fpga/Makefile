@@ -23,6 +23,7 @@ DAQPKTBFILES = $(TBPATH)/daqpacketizer_tb.v \
 	       $(SOURCEPATH)/daqpacketizer.v \
 	       $(SOURCEPATH)/daqFifo.v \
 	       $(SOURCEPATH)/daqtriggerctrl.v \
+	       $(SOURCEPATH)/daqrdclk.v \
 	       $(SOURCEPATH)/aFifo.v \
 	       $(SOURCEPATH)/GrayCounter.v \
 	       $(SOURCEPATH)/ad7606.v

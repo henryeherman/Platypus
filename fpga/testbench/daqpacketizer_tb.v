@@ -1,5 +1,6 @@
 `timescale 1ns/1ps
-`define CLOCK_PERIOD 5 // ns
+`define CLOCK_PERIOD_200MHZ 5 // ns
+`define CLOCK_PERIOD_60MHZ 16 //ns
 `define HI      1
 `define LO      0
 
@@ -35,11 +36,11 @@ end
 
 // Generate 200MHz clock
 always begin
-        clk_r = !clk_r; #(`CLOCK_PERIOD/2.0);
+        clk_r = !clk_r; #(`CLOCK_PERIOD_200MHZ/2.0);
 end
 
 always begin
-        fifo_out_clk = !fifo_out_clk; #15;
+        fifo_out_clk = !fifo_out_clk; #(`CLOCK_PERIOD_60MHZ/2.0);
 end
 
 always @(posedge fifo_out_clk) begin
