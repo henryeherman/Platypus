@@ -11,13 +11,15 @@ reg [2:0] os_sel_r;
 reg reset_r;
 reg en_r;
 
-wire rdclk_w;
+wire wrclk_w;
 wire rdreq_w;
 wire [15:0] db_w;
 
 reg fifo_out_clk;
 wire fifo_out_empty;
 reg fifo_out_req;
+
+wire [7:0] fifo_out_data;
 
 // Initialize Packetizer and Test
 initial begin
@@ -43,12 +45,10 @@ always begin
         fifo_out_clk = !fifo_out_clk; #(`CLOCK_PERIOD_60MHZ/2.0);
 end
 
-always @(posedge fifo_out_clk) begin
-        if(!fifo_out_empty)
-                fifo_out_req = 1;
-        else 
-                fifo_out_req = 0;
+always @(fifo_out_clk) begin
+                        fifo_out_req = !fifo_out_empty;
 end
+
 
 // OUTPUT TO FILE!
 always @(db_w) begin
@@ -63,10 +63,11 @@ daqpacketizer udaqpkt(
 .en_i(en_r),
 .db_o(db_w),
 .rdreq_o(rdreq_w),
-.rdclk_o(rdclk_w),
+.wrclk_o(wrclk_w),
 .fifo_out_clk(fifo_out_clk),
 .fifo_out_empty(fifo_out_empty),
-.fifo_out_req(fifo_out_req)
+.fifo_out_req(fifo_out_req),
+.fifo_out_data(fifo_out_data)
 );
 
 endmodule

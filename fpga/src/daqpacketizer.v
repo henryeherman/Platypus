@@ -8,10 +8,11 @@ reset_i,
 en_i,
 db_o,
 rdreq_o,
-rdclk_o,
+wrclk_o,
 fifo_out_clk,
 fifo_out_empty,
-fifo_out_req
+fifo_out_req,
+fifo_out_data,
 );
 
 parameter ADCCOUNT = 8;
@@ -37,12 +38,13 @@ input wire reset_i;
 input wire en_i;
 output wire [15:0] db_o;
 output wire rdreq_o;
-output wire rdclk_o;
+output wire wrclk_o;
 
 //  TEMPS
 input wire fifo_out_clk;
 output wire fifo_out_empty;
 input wire fifo_out_req;
+output wire [7:0] fifo_out_data;
 
 //AD7606 Signals
 wire conv_clk_w;
@@ -59,7 +61,7 @@ reg rd_en;
 //Fifo Signals
 wire wrfull;
 reg wrreq;
-reg wrclk;
+wire wrclk_w;
 
 reg [3:0] clkcount;
 reg [9:0] count_til_trigger_on;
@@ -74,7 +76,7 @@ always @(reset_i) begin
 end
 
 
-always @(negedge rdclk_w, reset_i) begin
+always @(negedge wrclk_w, reset_i) begin
 
         if (reset_i) begin
                 read_nextstate <= WAIT_ON_TRIG;
@@ -124,7 +126,7 @@ always @(conv_clk_w, busy_w, frstdata_w, read_state, adc_count) begin
 end 
 
 
-always @(posedge rdclk_w) begin
+always @(posedge wrclk_w) begin
         if (read_state == READ || read_state == READ_END) begin
                 if (adc_count > 8) 
                         adc_count = 0;
@@ -138,15 +140,15 @@ end
 
 
 assign db_o = db_w;
-assign rdclk_o = rdclk_w;
+assign wrclk_o = wrclk_w;
 assign rdreq_o = rd_en;
 
 daqrdclk udaqrdclk(
-.clk_i(clk_i),
-.reset_i(reset_i),
-.clk_en_o(rd_w),
-.clk_o(rdclk_w),
-.en_i(rd_en)
+        .clk_i(clk_i),
+        .reset_i(reset_i),
+        .clk_en_o(rd_w),
+        .clk_o(wrclk_w),
+        .en_i(rd_en)
 );
 
 daqtriggerctrl udaqtrig(
@@ -168,16 +170,17 @@ ad7606 uad7606_1
         .os_i(os_sel_i)
         );
 
-daqFifo #(.ADDRESS_WIDTH(6)) ufifo 
-        (//.q(fifo_data_out),
-        .rdempty(fifo_out_empty),
-        .rdreq(fifo_out_req),
-        .rdclk(fifo_out_clk),
+
+daqFifo #(.DATA_WIDTH(16),.ADDRESS_WIDTH(6)) ufifo 
+        (
+        .clear(reset_i),
         .data(db_w),
-        .wrfull(wrfull),
-        .wrreq(rdreq_o),
-        .wrclk(rd_w),
-        .clear(reset_i)
+        .wrreq(rd_en),
+        .wrclk(wrclk_w),
+        .q(fifo_out_data),
+        .rdclk(fifo_out_clk),
+        .rdreq(fifo_out_req),
+        .rdempty(fifo_out_empty)
         );
 
 

@@ -37,7 +37,7 @@ module aFifo
     wire                                Set_Status, Rst_Status;
     reg                                 Status;
     wire                                PresetFull, PresetEmpty;
-    
+    wire t; 
     //initial begin
     //    $display("Address width: %d\t Data width: %d\n", ADDRESS_WIDTH, DATA_WIDTH);
     //end
@@ -113,4 +113,5 @@ module aFifo
         else
             rdempty <= 0;
             
+    assign t = rdreq & rdempty;            
 endmodule
