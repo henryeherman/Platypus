@@ -16,6 +16,7 @@ fifo_out_data,
 );
 
 parameter ADCCOUNT = 8;
+parameter DAQCOUNT = 4;
 
 parameter WAIT_ON_TRIG = 3'b000;
 parameter WAIT_ON_BUSY_HIGH = 3'b001;
@@ -50,7 +51,7 @@ output wire [7:0] fifo_out_data;
 wire conv_clk_w;
 wire busy_w;
 wire rd_w;
-reg [3:0] cs_r;
+reg [8:0] cs_r;
 wire [15:0] db_w;
 reg [15:0] preamble_r;
 
@@ -67,12 +68,14 @@ reg [3:0] clkcount;
 reg [9:0] count_til_trigger_on;
 reg [9:0] count_til_trigger_off;
 
+reg [2:0] daqcount;
+
 reg [1:0] trigger_state;
 reg [1:0] trigger_nextstate;
 
 
 always @(reset_i) begin
-  cs_r <= 4'b1;        
+  cs_r<=9'b111111111;        
 end
 
 
@@ -86,13 +89,17 @@ always @(negedge wrclk_w, reset_i) begin
 end
 
 
+//TODO: FIX CONVERSION CLOCK WITH NEW STATEMACHINE TO JUST MONITOR
+//CLOCK!
 
-always @(conv_clk_w, busy_w, frstdata_w, read_state, adc_count) begin
+
+always @(conv_clk_w, busy_w, read_state, adc_count) begin
   case(read_state)
     WAIT_ON_TRIG: begin
-      cs_r[0] <=1;
+      cs_r<=9'b111111111;
       rd_en = 0;
       wr_en = 0;
+      daqcount = 0;
       if(conv_clk_w == `LO)
         read_nextstate = WAIT_ON_BUSY_HIGH;
     end
@@ -110,22 +117,26 @@ always @(conv_clk_w, busy_w, frstdata_w, read_state, adc_count) begin
        preamble_r = 16'hAAAA;
        read_nextstate = READ;
        wr_en = 1;
+       daqcount = 0;
     end
     READ: begin
       wr_en = 0;
-      cs_r[0] = 0;
+      cs_r = 9'b111111111 & (~(1 << daqcount));
       rd_en = 1;                              
-
-      if (adc_count > 7)
+      if (adc_count > 7) begin
         read_nextstate = READ_END;
-    
+        daqcount = daqcount + 1;
+      end
     end
     READ_END: begin
-      rd_en  = 0;
-      cs_r[0]<=1;
-
-      if (adc_count > 8)
+      rd_en  <= 0;
+      if (daqcount < DAQCOUNT) begin
+        adc_count <= 0;
+        read_nextstate <= READ;
+      end else if (adc_count > 8) begin
         read_nextstate = WAIT_ON_TRIG;
+        cs_r<=9'b111111111;
+      end
     end
     default: begin
         read_nextstate = WAIT_ON_TRIG;
@@ -168,7 +179,7 @@ daqtriggerctrl udaqtrig(
   .en_i(en_i)
 );
 
-ad7606 uad7606_1(
+ad7606 uad7606_0(
   .convstw_i(conv_clk_w),
   .reset_i(reset_i),
   .busy_o(busy_w),
@@ -179,6 +190,82 @@ ad7606 uad7606_1(
   .os_i(os_sel_i)
 );
 
+ad7606 uad7606_1(
+  .convstw_i(conv_clk_w),
+  .reset_i(reset_i),
+  .busy_o(busy_w),
+  .rd_i(rd_w),
+  .cs_i(cs_r[1]),
+  .db_o(db_w),
+  .frstdata_o(frstdata_w),
+  .os_i(os_sel_i)
+);
+
+ad7606 uad7606_2(
+  .convstw_i(conv_clk_w),
+  .reset_i(reset_i),
+  .busy_o(busy_w),
+  .rd_i(rd_w),
+  .cs_i(cs_r[2]),
+  .db_o(db_w),
+  .frstdata_o(frstdata_w),
+  .os_i(os_sel_i)
+);
+
+ad7606 uad7606_3(
+  .convstw_i(conv_clk_w),
+  .reset_i(reset_i),
+  .busy_o(busy_w),
+  .rd_i(rd_w),
+  .cs_i(cs_r[3]),
+  .db_o(db_w),
+  .frstdata_o(frstdata_w),
+  .os_i(os_sel_i)
+);
+
+ad7606 uad7606_4(
+  .convstw_i(conv_clk_w),
+  .reset_i(reset_i),
+  .busy_o(busy_w),
+  .rd_i(rd_w),
+  .cs_i(cs_r[4]),
+  .db_o(db_w),
+  .frstdata_o(frstdata_w),
+  .os_i(os_sel_i)
+);
+
+ad7606 uad7606_5(
+  .convstw_i(conv_clk_w),
+  .reset_i(reset_i),
+  .busy_o(busy_w),
+  .rd_i(rd_w),
+  .cs_i(cs_r[5]),
+  .db_o(db_w),
+  .frstdata_o(frstdata_w),
+  .os_i(os_sel_i)
+);
+
+ad7606 uad7606_6(
+  .convstw_i(conv_clk_w),
+  .reset_i(reset_i),
+  .busy_o(busy_w),
+  .rd_i(rd_w),
+  .cs_i(cs_r[6]),
+  .db_o(db_w),
+  .frstdata_o(frstdata_w),
+  .os_i(os_sel_i)
+);
+
+ad7606 uad7606_7(
+  .convstw_i(conv_clk_w),
+  .reset_i(reset_i),
+  .busy_o(busy_w),
+  .rd_i(rd_w),
+  .cs_i(cs_r[7]),
+  .db_o(db_w),
+  .frstdata_o(frstdata_w),
+  .os_i(os_sel_i)
+);
 
 
 daqFifo #(.ADDRESS_WIDTH(6)) ufifo (
