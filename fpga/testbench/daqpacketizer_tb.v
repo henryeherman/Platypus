@@ -21,6 +21,8 @@ reg fifo_out_req;
 
 wire [7:0] fifo_out_data;
 
+wire [7:0] t;
+
 // Initialize Packetizer and Test
 initial begin
         $dumpvars;
@@ -69,5 +71,7 @@ daqpacketizer udaqpkt(
 .fifo_out_req(fifo_out_req),
 .fifo_out_data(fifo_out_data)
 );
+
+assign t = (fifo_out_req & fifo_out_clk) ? fifo_out_data : 8'bz;
 
 endmodule
