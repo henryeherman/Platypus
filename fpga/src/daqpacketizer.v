@@ -22,9 +22,10 @@ parameter WAIT_ON_TRIG = 3'b000;
 parameter WAIT_ON_BUSY_HIGH = 3'b001;
 parameter WAIT_ON_BUSY_LOW = 3'b010;
 parameter PREAMBLE = 3'b011;
-parameter READ = 3'b100;
-parameter READ_END = 3'b101;
-parameter COMPLETE = 3'b110;
+parameter PACKETCOUNT = 3'b100;
+parameter READ = 3'b101;
+parameter READ_END = 3'b110;
+parameter COMPLETE = 3'b111;
 
 reg [2:0] read_state;
 reg [2:0] read_nextstate;
@@ -53,7 +54,7 @@ wire busy_w;
 wire rd_w;
 reg [8:0] cs_r;
 wire [15:0] db_w;
-reg [15:0] preamble_r;
+reg [15:0] header_r;
 
 
 wire rdclk_w;
@@ -70,9 +71,7 @@ reg [9:0] count_til_trigger_off;
 
 reg [3:0] daqcount;
 
-reg [1:0] trigger_state;
-reg [1:0] trigger_nextstate;
-
+reg [15:0] packetcount_r;
 
 always @(reset_i) begin
   cs_r<=9'b111111111;        
@@ -83,14 +82,11 @@ always @(negedge wrclk_w, reset_i) begin
   if (reset_i) begin
     read_nextstate <= WAIT_ON_TRIG;
     read_state <= WAIT_ON_TRIG;
+    packetcount_r = 0;
   end  begin
     read_state <= read_nextstate;
   end        
 end
-
-
-//TODO: FIX CONVERSION CLOCK WITH NEW STATEMACHINE TO JUST MONITOR
-//CLOCK!
 
 
 always @(conv_clk_w, busy_w, read_state, adc_count) begin
@@ -113,11 +109,16 @@ always @(conv_clk_w, busy_w, read_state, adc_count) begin
         read_nextstate = PREAMBLE;
         end
     end
-    PREAMBLE: begin
-       preamble_r = 16'hAAAA;
-       read_nextstate = READ;
-       wr_en = 1;
-       daqcount = 0;
+    PREAMBLE: begin      
+      packetcount_r = packetcount_r + 1;
+      header_r = 16'hAAAA;
+      read_nextstate = PACKETCOUNT;       
+      wr_en = 1;
+      daqcount = 0;      
+    end
+    PACKETCOUNT: begin
+     header_r = packetcount_r;
+     read_nextstate = READ; 
     end
     READ: begin
       wr_en = 0;
@@ -134,7 +135,11 @@ always @(conv_clk_w, busy_w, read_state, adc_count) begin
         adc_count <= 0;
         read_nextstate <= READ;
       end else if (adc_count > 8) begin
-        read_nextstate = WAIT_ON_TRIG;
+        if(busy_w)
+          read_nextstate = WAIT_ON_BUSY_LOW;
+        else
+          read_nextstate = WAIT_ON_TRIG;
+
         cs_r<=9'b111111111;
       end
     end
@@ -159,7 +164,7 @@ end
 
 wire wrreq_w = rd_en | wr_en; 
 
-assign db_o = wr_en ? preamble_r : db_w;
+assign db_o = wr_en ? header_r : db_w;
 assign wrclk_o = wrclk_w;
 assign rdreq_o = rd_en;
 
