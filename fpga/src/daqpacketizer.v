@@ -1,14 +1,26 @@
 `timescale 1ns/1ps
 `define HI      1
 `define LO      0
+
+
 module daqpacketizer(
 clk_i,
-os_sel_i,
-reset_i,
 en_i,
+
+//AD7606 signals
+conv_clk_o,
+reset_i,
+rd_o,
+cs_o,
+db_i,
 db_o,
-rdreq_o,
+busy_i,
+frstdata_i,
+os_sel_i,
+
+//Fifo out signals
 wrclk_o,
+rdreq_o,
 fifo_out_clk,
 fifo_out_empty,
 fifo_out_req,
@@ -25,8 +37,8 @@ parameter PREAMBLE = 3'b011;
 parameter PACKETCOUNT = 3'b100;
 parameter READ = 3'b101;
 parameter READ_END = 3'b110;
-parameter COMPLETE = 3'b111;
 
+// State variables control 
 reg [2:0] read_state;
 reg [2:0] read_nextstate;
 
@@ -35,7 +47,7 @@ reg [3:0] adc_count;
 
 input wire clk_i; //Expect 200MHz clock
 input wire [2:0] os_sel_i;
-wire frstdata_w;
+input wire frstdata_i;
 input wire reset_i;
 input wire en_i;
 output wire [15:0] db_o;
@@ -49,11 +61,11 @@ input wire fifo_out_req;
 output wire [7:0] fifo_out_data;
 
 //AD7606 Signals
-wire conv_clk_w;
-wire busy_w;
-wire rd_w;
-reg [8:0] cs_r;
-wire [15:0] db_w;
+output wire conv_clk_o;
+input wire busy_i;
+output wire rd_o;
+output reg [8:0] cs_o;
+input wire [15:0] db_i;
 reg [15:0] header_r;
 
 
@@ -63,7 +75,7 @@ reg rd_en;
 //Fifo Signals
 wire wrfull;
 wire wrclk_w;
-reg wr_en;
+reg wr_en; //used to control header
 
 reg [3:0] clkcount;
 reg [9:0] count_til_trigger_on;
@@ -74,7 +86,7 @@ reg [3:0] daqcount;
 reg [15:0] packetcount_r;
 
 always @(reset_i) begin
-  cs_r<=9'b111111111;        
+  cs_o<=9'b111111111;        
 end
 
 
@@ -89,23 +101,23 @@ always @(negedge wrclk_w, reset_i) begin
 end
 
 
-always @(conv_clk_w, busy_w, read_state, adc_count) begin
+always @(conv_clk_o, busy_i, read_state, adc_count) begin
   case(read_state)
     WAIT_ON_TRIG: begin
-      cs_r<=9'b111111111;
+      cs_o<=9'b111111111;
       rd_en = 0;
       wr_en = 0;
       daqcount = 0;
-      if(conv_clk_w == `LO)
+      if(conv_clk_o == `LO)
         read_nextstate = WAIT_ON_BUSY_HIGH;
     end
     WAIT_ON_BUSY_HIGH: begin
-      if (busy_w == `HI) begin
+      if (busy_i == `HI) begin
         read_nextstate = WAIT_ON_BUSY_LOW;
       end
     end
     WAIT_ON_BUSY_LOW: begin
-      if (busy_w == `LO) begin
+      if (busy_i == `LO) begin
         read_nextstate = PREAMBLE;
         end
     end
@@ -122,7 +134,7 @@ always @(conv_clk_w, busy_w, read_state, adc_count) begin
     end
     READ: begin
       wr_en = 0;
-      cs_r = 9'b111111111 & (~(1 << daqcount));
+      cs_o = 9'b111111111 & (~(1 << daqcount));
       rd_en = 1;                              
       if (adc_count > 7) begin
         read_nextstate = READ_END;
@@ -135,12 +147,12 @@ always @(conv_clk_w, busy_w, read_state, adc_count) begin
         adc_count <= 0;
         read_nextstate <= READ;
       end else if (adc_count > 8) begin
-        if(busy_w)
+        if(busy_i)
           read_nextstate = WAIT_ON_BUSY_LOW;
         else
           read_nextstate = WAIT_ON_TRIG;
 
-        cs_r<=9'b111111111;
+        cs_o<=9'b111111111;
       end
     end
     default: begin
@@ -163,113 +175,24 @@ end
 
 
 wire wrreq_w = rd_en | wr_en; 
-
-assign db_o = wr_en ? header_r : db_w;
+assign db_o = wr_en ? header_r : db_i;
 assign wrclk_o = wrclk_w;
 assign rdreq_o = rd_en;
 
 daqrdclk udaqrdclk(
   .clk_i(clk_i),
   .reset_i(reset_i),
-  .clk_en_o(rd_w),
+  .clk_en_o(rd_o),
   .clk_o(wrclk_w),
   .en_i(rd_en)
 );
 
 daqtriggerctrl udaqtrig(
   .clk_i(clk_i),
-  .busy_i(busy_w),
-  .conv_clk_o(conv_clk_w),
+  .busy_i(busy_i),
+  .conv_clk_o(conv_clk_o),
   .reset_i(reset_i),
   .en_i(en_i)
-);
-
-ad7606 uad7606_0(
-  .convstw_i(conv_clk_w),
-  .reset_i(reset_i),
-  .busy_o(busy_w),
-  .rd_i(rd_w),
-  .cs_i(cs_r[0]),
-  .db_o(db_w),
-  .frstdata_o(frstdata_w),
-  .os_i(os_sel_i)
-);
-
-ad7606 uad7606_1(
-  .convstw_i(conv_clk_w),
-  .reset_i(reset_i),
-  .busy_o(busy_w),
-  .rd_i(rd_w),
-  .cs_i(cs_r[1]),
-  .db_o(db_w),
-  .frstdata_o(frstdata_w),
-  .os_i(os_sel_i)
-);
-
-ad7606 uad7606_2(
-  .convstw_i(conv_clk_w),
-  .reset_i(reset_i),
-  .busy_o(busy_w),
-  .rd_i(rd_w),
-  .cs_i(cs_r[2]),
-  .db_o(db_w),
-  .frstdata_o(frstdata_w),
-  .os_i(os_sel_i)
-);
-
-ad7606 uad7606_3(
-  .convstw_i(conv_clk_w),
-  .reset_i(reset_i),
-  .busy_o(busy_w),
-  .rd_i(rd_w),
-  .cs_i(cs_r[3]),
-  .db_o(db_w),
-  .frstdata_o(frstdata_w),
-  .os_i(os_sel_i)
-);
-
-ad7606 uad7606_4(
-  .convstw_i(conv_clk_w),
-  .reset_i(reset_i),
-  .busy_o(busy_w),
-  .rd_i(rd_w),
-  .cs_i(cs_r[4]),
-  .db_o(db_w),
-  .frstdata_o(frstdata_w),
-  .os_i(os_sel_i)
-);
-
-ad7606 uad7606_5(
-  .convstw_i(conv_clk_w),
-  .reset_i(reset_i),
-  .busy_o(busy_w),
-  .rd_i(rd_w),
-  .cs_i(cs_r[5]),
-  .db_o(db_w),
-  .frstdata_o(frstdata_w),
-  .os_i(os_sel_i)
-);
-
-ad7606 uad7606_6(
-  .convstw_i(conv_clk_w),
-  .reset_i(reset_i),
-  .busy_o(busy_w),
-  .rd_i(rd_w),
-  .cs_i(cs_r[6]),
-  .db_o(db_w),
-  .frstdata_o(frstdata_w),
-  .os_i(os_sel_i)
-);
-
-ad7606 uad7606_7(
-  .convstw_i(conv_clk_w),
-  .reset_i(reset_i),
-  .busy_o(busy_w),
-  .rd_i(rd_w),
-  .cs_i(cs_r[7]),
-  .db_o(db_w),
-  .frstdata_o(frstdata_w),
-  .os_i(os_sel_i)
 );
 
 
