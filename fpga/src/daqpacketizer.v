@@ -16,7 +16,7 @@ fifo_out_data,
 );
 
 parameter ADCCOUNT = 8;
-parameter DAQCOUNT = 4;
+parameter DAQCOUNT = 8;
 
 parameter WAIT_ON_TRIG = 3'b000;
 parameter WAIT_ON_BUSY_HIGH = 3'b001;
@@ -68,7 +68,7 @@ reg [3:0] clkcount;
 reg [9:0] count_til_trigger_on;
 reg [9:0] count_til_trigger_off;
 
-reg [2:0] daqcount;
+reg [3:0] daqcount;
 
 reg [1:0] trigger_state;
 reg [1:0] trigger_nextstate;
