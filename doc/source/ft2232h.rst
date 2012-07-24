@@ -1,0 +1,4 @@
+Overview of the FT2232H
+=======================
+
+This is an awesome chip that can be used for **many** functions.  Here I plan to use one for programming the FPGA and one a a synchronous FIFO to stream the data to the host for further processing.  I have yet to see a multichannel (>8 channel) DAQ with simultaneous sampling be open sourced.  This is how I plan to do it!

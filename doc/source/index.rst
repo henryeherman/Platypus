@@ -18,6 +18,12 @@ Contents:
    :maxdepth: 2
 
    purpose
+   buildinst
+   fpgadevelopment
+   verilogcode
+   hardwaredesign
+   softwarearch
+   machinelearningalgo
 
 
 

@@ -8,4 +8,4 @@ ignorei
 fpga/simulation
 fpga/simulation/*
 build
-doc/build
+doc/build/*
