@@ -6,11 +6,13 @@
 Welcome to Platypus DAQ's documentation!
 ========================================
 
+Introduction
+------------
 The Platypus DAQ is a biomimetic sensory system meant to give underwater autonomous robots the ability to percieve the electrical properties of their immeadiate environment.  
 The system is named after the Platypus since it is one of the few mammals that have the ability to sense the tiny electrical signals ever present in the world around us.  
-Unlike the natuarl platypus our system will be an active system, generating its own electric field.
-In this way are system is much closer to *weakly electric fish*.  This project is a component of a `MURI <http://muri.mse.vt.edu/>`_ (Multi University Reasearch Initiative). 
-Currently UCLA is collaborating with `Virtgina Tech <http://www.vt.edu/>`_, `University of Texas, Dallas <http://www.utdallas.edu/>`_, `Providence College <http://www.providence.edu>`_, and `Stanford <http://www.stanford.edu/>_`.  It is funded by the `Office of Naval Research <http://www.onr.navy.mil/>`_.
+Unlike the natural platypus our system will be an active system, generating its own electric field.
+In this way our system is much closer to sensory system of the *weakly electric fish*.  This project is a component of a `MURI <http://muri.mse.vt.edu/>`_ (Multi University Reasearch Initiative). 
+Currently UCLA is collaborating with `Virtgina Tech <http://www.vt.edu/>`_, `University of Texas, Dallas <http://www.utdallas.edu/>`_, `Providence College <vhttp://www.providence.edu>`_, and `Stanford <http://www.stanford.edu/>`_.  It is funded by the `Office of Naval Research <http://www.onr.navy.mil/>`_.
 
 Contents:
 
@@ -20,12 +22,9 @@ Contents:
    purpose
    buildinst
    fpgadevelopment
-   verilogcode
    hardwaredesign
    softwarearch
    machinelearningalgo
-
-
 
 Indices and tables
 ==================

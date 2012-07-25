@@ -1,6 +1,11 @@
 Insights from Biology
-====================
-Essential to all autonomous creatures is the ability to sense the surrouding environment.  Evolution has delveloped complicated structures to help organisms gain knowledge about the physical state of the world.  Creatures lacking in advanced sensory systems are more likely at to fall victim to harsh reality of nature. One of the hallmarks of *advanced* lifeforms are highly evolved sensory systems.  Sensory *receptors* are diverse and vary with species and environment.  Senses can be classified into groups:
+=====================
+Essential to all autonomous creatures is the ability to sense the surrouding environment.  
+Evolution has delveloped complicated structures to help organisms gain knowledge about the physical state of the world.  
+Creatures lacking in advanced sensory systems are more likely at to fall victim to harsh reality of nature. 
+One of the hallmarks of *advanced* lifeforms are highly evolved sensory systems.  
+Sensory *receptors* are diverse and vary with species and environment.  
+Senses can be classified into groups:
 
 - Vision (Sight)
 - Auditory (Hearing)

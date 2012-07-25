@@ -33,12 +33,16 @@ Once you have installed run the following commands.
 
 For Homebrew
 ^^^^^^^^^^^^
-::
+
+.. code-block:: bash
+
         $ brew install iverilog gtkwave
 
 For Macports
 ^^^^^^^^^^^^
-::
+
+.. code-block:: bash
+
         $ sudo port install iverilog gtkwave
 
 If you any difficulties then, I leave the solution up to you, try `here <http://lmgtfy.com/?q=installing+iverilog+on+mac+osx>`_.       
