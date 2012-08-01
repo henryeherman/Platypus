@@ -1,0 +1,92 @@
+# Makefile to build FT2232H TX Counter Demo
+# Author: Henry Herman
+# Email: hherman@ucla.edu
+#
+
+MKDIR_P = mkdir -p
+
+BUILD_DIR = ./build
+
+XILINX_SYNTH=xst
+XILINX_BUILD=ngdbuild
+XILINX_MAP=map
+XILINX_ROUTE=par
+XILINX_BIT=bitgen
+XILINX_PROM=promgen
+
+TOPFILE=fttxdemo
+
+#iverlog CONFIG
+VERILOG_CMD = iverilog
+#VERILOG_FLAGS = 
+
+# VVP (iverilog runtime engine)
+VVP_CMD = vvp
+#VVP_FLAGS = 
+
+#Simulation Vars
+SIMDIR = simulation
+DUMPTYPE = vcd
+
+#Viewer
+WAVEFORM_VIEWER = gtkwave
+
+TOPSRC=$(TOPFILE).v
+SIMSRC=ft2232h_demo_tb.v
+DEMOPATH=.
+SOURCEPATH=../src
+SIMDIR=../simulation
+FTTXTB=$(DEMOPATH)/ft2232h_demo_tb.v
+FTTXDEMOFILES = $(SOURCEPATH)/ft2232h.v \
+		$(SOURCEPATH)/ft2232h_tx.v \
+		$(DEMOPATH)/ft2232h_count_streamer.v \
+
+DEVICE=xc3s200a-vq100-4
+
+.PHONY: directories
+
+all: directories default
+
+directories: ${BUILD_DIR}
+
+${BUILD_DIR}:
+	${MKDIR_P} ${BUILD_DIR}
+
+default: $(BUILD_DIR)/$(TOPFILE).bin
+
+$(BUILD_DIR)/$(TOPFILE).ngc: $(TOPFILE).v
+	echo "run -ifn $(TOPFILE).v -ifmt Verilog -ofn $(BUILD_DIR)/$(TOPFILE) -p \
+		$(DEVICE) -opt_mode Speed -opt_level 1" | $(XILINX_SYNTH)
+
+$(BUILD_DIR)/$(TOPFILE).ngd: $(BUILD_DIR)/$(TOPFILE).ngc $(TOPFILE).ucf
+	$(XILINX_BUILD) -p $(DEVICE) -uc $(TOPFILE).ucf $(BUILD_DIR)/$(TOPFILE).ngc \
+		$(BUILD_DIR)/$(TOPFILE).ngd
+
+$(BUILD_DIR)/$(TOPFILE).ncd: $(BUILD_DIR)/$(TOPFILE).ngd
+	$(XILINX_MAP) -detail -o $(BUILD_DIR)/$(TOPFILE).ncd \
+		-pr b $(BUILD_DIR)/$(TOPFILE).ngd
+
+$(BUILD_DIR)/parout.ncd: $(BUILD_DIR)/$(TOPFILE).ncd
+	$(XILINX_ROUTE) -w $(BUILD_DIR)/$(TOPFILE).ncd $(BUILD_DIR)/parout.ncd \
+	       	$(BUILD_DIR)/$(TOPFILE).pcf
+
+$(BUILD_DIR)/$(TOPFILE).bit: $(BUILD_DIR)/parout.ncd
+	$(XILINX_BIT) -g CRC:Enable -g StartUpClk:"JtagClk" -g Compress \
+		$(BUILD_DIR)/parout.ncd $(BUILD_DIR)/$(TOPFILE).bit $(BUILD_DIR)/$(TOPFILE).pcf
+
+$(BUILD_DIR)/$(TOPFILE).bin: $(BUILD_DIR)/$(TOPFILE).bit
+	$(XILINX_PROM) -w -p bin -o $(BUILD_DIR)/$(TOPFILE).bin -u 0 $(BUILD_DIR)/$(TOPFILE).bit
+
+simulation:
+	$(VERILOG_CMD) -o $(SIMDIR)/fttxdemo  $(FTTXTB) $(FTTXDEMOFILES)
+	$(VVP_CMD) $(SIMDIR)/fttxdemo -$(DUMPTYPE) $(VVP_FLAGS)
+	mv dump.$(DUMPTYPE) $(SIMDIR)/fttxdemo.$(DUMPTYPE)
+ifdef VIEW
+	$(WAVEFORM_VIEWER) $(SIMDIR)/fttxdemo.$(DUMPTYPE)
+endif
+
+
+.PHONY: clean
+clean:
+	rm -Rf *.lst *.xml *.xrpt ./_xmsgs ./xst ./xlnx_auto_0_xdb ./build
+	

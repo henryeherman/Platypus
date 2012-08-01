@@ -11,6 +11,7 @@ rd_i,
 wr_i,
 clkout_o,
 oe_i,
+reset_i
 );
 
 
@@ -21,15 +22,20 @@ wire [7:0] data_in;
 
 output wire rxf_o;
 output reg txe_o;
-input rd_i;
-input wr_i;
-output reg clkout_o;
-input oe_i;
-input sim_rxe_i;
+input wire rd_i;
+input wire wr_i;
+output wire clkout_o;
+input wire oe_i;
+
+input reset_i;
+
+reg clkout_r;
 
 integer outfile;
 
 //Setup RX Module
+
+`ifdef TESTRX
 // FROM PC!
 ft2232h_rx rxmod(
         .data(data_out),
@@ -38,7 +44,9 @@ ft2232h_rx rxmod(
         .oe_i(oe_i),
         .clk_i(clkout_o)
 );
+`endif
 
+`ifdef TESTTX
 // TO PC!
 ft2232h_tx txmod(
         .data(data_in),
@@ -46,18 +54,25 @@ ft2232h_tx txmod(
         .clkout_i(clkout_o),
         .txe_i(txe_o)
 );
+`endif
 
 // Setup TX Process
 initial begin
-        clkout_o = `LO;
+        clkout_r = `HI;
         txe_o = `LO; 
 end
 
 // USB Clock output
 always begin
-        clkout_o = !clkout_o; #16;
+    txe_o = `LO;
+    clkout_r = !clkout_r; #16;
 end
-       
+
+always @(reset_i)
+  if(reset_i==`LO)
+    txe_o <= `HI;
+
+assign clkout_o =  (reset_i) ? clkout_r : `HI;
 
 assign data_in = data;
 

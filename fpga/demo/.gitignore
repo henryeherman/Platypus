@@ -1,0 +1,7 @@
+_xmsgs
+xst
+build
+*.lst
+*.xml
+*.xrpt
+xlnx_auto_0_xdb

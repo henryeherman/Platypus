@@ -7,6 +7,15 @@ VERILOGEX = .v # Verilog File Extension
 TBPATH = testbench
 TESTBENCHPATH = $(TBPATH)/$(TESTBENCH)$(VERILOGEX)
 SOURCEPATH = src
+DEMOPATH = demo
+
+
+FTTXDEMOFILES = $(DEMOPATH)/ft2232h_demo_tb.v \
+		$(SOURCEPATH)/ft2232h.v \
+		$(SOURCEPATH)/ft2232h_tx.v \
+		$(SOURCEPATH)/aFifo_negedge.v \
+		$(SOURCEPATH)/GrayCounter.v \
+		$(DEMOPATH)/ft2232h_count_streamer.v \
 
 
 FT2232TBFILES = $(SOURCEPATH)/ft2232h.v \
@@ -80,26 +89,37 @@ view: testbench_check
 	$(WAVEFORM_VIEWER)  $(SIMDIR)/$(TESTBENCH).$(DUMPTYPE)
 
 
+fttxdemo:
+	$(VERILOG_CMD) -o $(SIMDIR)/fttxdemo $(FTTXDEMOFILES)
+	$(VVP_CMD) $(SIMDIR)/fttxdemo -$(DUMPTYPE) $(VVP_FLAGS)
+	mv dump.$(DUMPTYPE) $(SIMDIR)/fttxdemo.$(DUMPTYPE)
+ifdef VIEW
+	$(WAVEFORM_VIEWER) $(SIMDIR)/fttxdemo.$(DUMPTYPE)
+endif
+
+
 ft2232h_tb:  
 	$(VERILOG_CMD) -o $(SIMDIR)/ft2232h_tb $(FT2232TBFILES)
 	$(VVP_CMD) $(SIMDIR)/ft2232h_tb -$(DUMPTYPE) $(VVP_FLAGS)
 	mv dump.$(DUMPTYPE) $(SIMDIR)/ft2232h_tb.$(DUMPTYPE)
+ifdef VIEW
 	$(WAVEFORM_VIEWER) $(SIMDIR)/ft2232h_tb.$(DUMPTYPE)
+endif
 
 ad7606_tb:
 	$(VERILOG_CMD) -o $(SIMDIR)/ad7606_tb $(AD7606TBFILES)
 	$(VVP_CMD) $(SIMDIR)/ad7606_tb -$(DUMPTYPE) $(VVP_FLAGS)
 	mv dump.$(DUMPTYPE) $(SIMDIR)/ad7606_tb.$(DUMPTYPE)
+ifdef VIEW
 	$(WAVEFORM_VIEWER) $(SIMDIR)/ad7606_tb.$(DUMPTYPE)
+endif
 
-daqpkt_tb_nv:
+daqpkt_tb:
 	$(VERILOG_CMD) -o $(SIMDIR)/daqpacketizer_tb $(DAQPKTBFILES)
 	$(VVP_CMD) $(SIMDIR)/daqpacketizer_tb -$(DUMPTYPE) $(VVP_FLAGS)
+ifdef VIEW
 	mv dump.$(DUMPTYPE) $(SIMDIR)/daqpacketizer_tb.$(DUMPTYPE)
-
-daqpkt_tb: daqpkt_tb_nv
-	$(WAVEFORM_VIEWER) $(SIMDIR)/daqpacketizer_tb.$(DUMPTYPE)
-
+endif
 
 
 

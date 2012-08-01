@@ -55,8 +55,6 @@ end
 `endif
 
 
-
-
 `ifdef TESTRX
 always @(negedge clkout_w, posedge rdreset) begin
         if(rdreset) begin
