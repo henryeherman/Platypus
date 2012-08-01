@@ -19,7 +19,7 @@ module fttxdemo(
     output wire wr_o, 
     output wire oe_o,
     input wire pwren_i,   
-    inout wire [7:0] byte_io;    
+    inout wire [7:0] byte_io    
   );
 
 	reg [22:0] cnt_r = 23'b0;

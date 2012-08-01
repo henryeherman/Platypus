@@ -36,10 +36,14 @@ SIMSRC=ft2232h_demo_tb.v
 DEMOPATH=.
 SOURCEPATH=../src
 SIMDIR=../simulation
-FTTXTB=$(DEMOPATH)/ft2232h_demo_tb.v
-FTTXDEMOFILES = $(SOURCEPATH)/ft2232h.v \
-		$(SOURCEPATH)/ft2232h_tx.v \
+FTTXTB=$(DEMOPATH)/ft2232h_demo_tb.v \
+		$(SOURCEPATH)/ft2232h.v \
+		$(SOURCEPATH)/ft2232h_tx.v
+
+FTTXDEMOFILES = $(SOURCEPATH)/ft2232h_tx.v \
 		$(DEMOPATH)/ft2232h_count_streamer.v \
+
+XPROJFILE = $(BUILD_DIR)/fttxdemo.prj
 
 DEVICE=xc3s200a-vq100-4
 
@@ -54,8 +58,19 @@ ${BUILD_DIR}:
 
 default: $(BUILD_DIR)/$(TOPFILE).bin
 
-$(BUILD_DIR)/$(TOPFILE).ngc: $(TOPFILE).v
-	echo "run -ifn $(TOPFILE).v -ifmt Verilog -ofn $(BUILD_DIR)/$(TOPFILE) -p \
+
+$(XPROJFILE):$(FTTXDEMOFILES)
+	@echo "Cleanup Xilinx Project File"
+	if [ -e $(XPROJFILE) ]
+		rm -Rf $(XPROJFILE)
+	fi
+
+	@echo "Building Xilinx Project File"
+		
+			
+
+$(BUILD_DIR)/$(TOPFILE).ngc: $(XPROJFILE)
+	echo "run -ifn $(FTTXDEMOFILES) -ifmt Verilog -ofn $(BUILD_DIR)/$(TOPFILE) -p \
 		$(DEVICE) -opt_mode Speed -opt_level 1" | $(XILINX_SYNTH)
 
 $(BUILD_DIR)/$(TOPFILE).ngd: $(BUILD_DIR)/$(TOPFILE).ngc $(TOPFILE).ucf
