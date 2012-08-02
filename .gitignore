@@ -9,3 +9,4 @@ fpga/simulation
 fpga/simulation/*
 build
 doc/build/*
+.DS_Store

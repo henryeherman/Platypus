@@ -18,9 +18,9 @@
 `define LO  0
 
 module ft2232h_count_streamer
-#(parameter  WAIT_TXE_LO = 3'b000,  // Wait for TXE to be LO
-            WR_LO = 3'b001,  // Enable writing by taking WR LO
-            WRITING = 3'b01) // Write till TXE is HI
+#(parameter  WAIT_TXE_LO = 3'b00,  // Wait for TXE to be LO
+            WR_LO = 3'b01,  // Enable writing by taking WR LO
+            WRITING = 3'b10) // Write till TXE is HI
 
 (  input wire clk_i,  // CLKOUT - 60MHz synchronous clock from FT2232H
   inout wire [7:0] adbus_o, // ADBUS[7:0] - Bidirection data port to USB Fifo
@@ -31,7 +31,7 @@ module ft2232h_count_streamer
   output wire blinker_o ); // Clock divided output, blink during transmit
 
 
-reg [2:0] write_state, write_nextstate;
+reg [1:0] write_state, write_nextstate;
 
 reg [22:0] cnt_r = 'b0;
 reg [7:0] adbus_r = 'b0;
@@ -39,42 +39,41 @@ reg [7:0] adbus_r = 'b0;
 
 
 // Synchronous State Machine
-always @(negedge clk_i, rst_i) begin
-  if(rst_i) begin
-   write_state = WAIT_TXE_LO;
-   write_nextstate = WAIT_TXE_LO;
-  end else begin
+always @(negedge clk_i) begin
     write_state <= write_nextstate;
     if (write_state == WRITING) begin
-      cnt_r = cnt_r + 1; // Blink LED
-      adbus_r = adbus_r + 1; // Increment TX Data byte
+      cnt_r <= cnt_r + 1; // Blink LED
+      adbus_r <= adbus_r + 1; // Increment TX Data byte
     end 
-  end 
 end
 
 // Change state on TXE
-always @(write_state, txe_i) begin
-  case (write_state)
-    WAIT_TXE_LO: begin
-      wr_o <= 1;
-      oe_o <= 0; // OK to RX
-      if ( txe_i == `LO ) begin
-        write_nextstate <= WR_LO;  // Next clock enable WRiting
+always @(write_state, txe_i, rst_i) begin
+  if(rst_i == `HI) 
+    write_nextstate <= WAIT_TXE_LO;
+  else begin
+    case (write_state)
+      WAIT_TXE_LO: begin
+        wr_o <= 1;
+        oe_o <= 0; // OK to RX
+        if ( txe_i == `LO ) begin
+          write_nextstate <= WR_LO;  // Next clock enable WRiting
+        end
       end
-    end
-    WR_LO: begin
-      wr_o <=0;  // Enable WRiting
-      oe_o <= 1;  // OK to TX
-      if( txe_i == `HI)  // Make sure WRiting is not disabled
-        write_nextstate <= WAIT_TXE_LO;
-      else
-        write_nextstate <= WRITING; // Go to WRite state
-    end
-    WRITING: begin
-      if( txe_i == `HI) // WRite until TXE goes high
-        write_nextstate <= WAIT_TXE_LO;
-    end 
-  endcase
+      WR_LO: begin
+        wr_o <=0;  // Enable WRiting
+        oe_o <= 1;  // OK to TX
+        if( txe_i == `HI)  // Make sure WRiting is not disabled
+          write_nextstate <= WAIT_TXE_LO;
+        else
+          write_nextstate <= WRITING; // Go to WRite state
+      end
+      WRITING: begin
+        if( txe_i == `HI) // WRite until TXE goes high
+          write_nextstate <= WAIT_TXE_LO;
+      end 
+    endcase
+  end
 end
 
 // Recieve or Transmit depending on OE

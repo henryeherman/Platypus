@@ -13,8 +13,8 @@ else
 endif
 BASE_DIR = $(abspath ..)
 ISE_HELPER = xtclsh $(BASE_DIR)/tcl/ise_helper.tcl
-SANITY_CHECKER = python $(BASE_DIR)/python/check_inout.py
-TIMING_CHECKER = python $(BASE_DIR)/python/check_timing.py
+#SANITY_CHECKER = python $(BASE_DIR)/python/check_inout.py
+#TIMING_CHECKER = python $(BASE_DIR)/python/check_timing.py
 ISE_FILE = $(BUILD_DIR)/$(TOP_MODULE).$(ISE_EXT)
 BIN_FILE = $(BUILD_DIR)/$(TOP_MODULE).bin
 BIT_FILE = $(BUILD_DIR)/$(TOP_MODULE).bit
@@ -28,15 +28,17 @@ all: bin
 
 proj: $(ISE_FILE)
 
-check: $(ISE_FILE)
-	$(SANITY_CHECKER) $(TOP_MODULE).v $(TOP_MODULE).ucf
-	$(ISE_HELPER) "Check Syntax"
+#check: $(ISE_FILE)
+#	$(SANITY_CHECKER) $(TOP_MODULE).v $(TOP_MODULE).ucf
+#	$(ISE_HELPER) "Check Syntax"
 
 synth: $(ISE_FILE)
 	$(ISE_HELPER) "Synthesize - XST"
 
-bin: check $(BIN_FILE)
-	$(TIMING_CHECKER) $(TWR_FILE)
+#bin: check $(BIN_FILE)
+#	$(TIMING_CHECKER) $(TWR_FILE)
+
+bin: $(BIN_FILE)
 
 mcs: $(MCS_FILE)
 
@@ -56,7 +58,7 @@ $(ISE_FILE): $$(SOURCES) $$(MAKEFILE_LIST)
 $(BIN_FILE): $(ISE_FILE) $$(SOURCES) $$(MAKEFILE_LIST)
 	@echo $@
 	$(ISE_HELPER) "Generate Programming File"
-	touch $@
+	#touch $@
 
 $(MCS_FILE): $(BIN_FILE)
 	promgen -w -spi -p mcs -o $(MCS_FILE) -s 4096 -u 0 $(BIT_FILE)

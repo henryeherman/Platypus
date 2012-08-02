@@ -1,28 +1,104 @@
 # Makefile to build FT2232H TX Counter Demo
 # Author: Henry Herman
 # Email: hherman@ucla.edu
-#
+# Uses USRP Build System
 
-MKDIR_P = mkdir -p
+##########################################
+# Project Setup
+##########################################
+TOP_MODULE := fttxdemo
+BUILD_DIR := build/
 
-BUILD_DIR = ./build
+# set me in custom makefile
+CUSTOM_SRCS = 
+CUSTOM_DEFS =
 
-XILINX_SYNTH=xst
-XILINX_BUILD=ngdbuild
-XILINX_MAP=map
-XILINX_ROUTE=par
-XILINX_BIT=bitgen
-XILINX_PROM=promgen
+##########################################
+# Include Other makefiles
+##########################################
 
-TOPFILE=fttxdemo
+include ../Makefile.common
 
+
+##########################################
+# Project Properties
+##########################################
+
+export PROJECT_PROPERTIES := \
+family "Spartan3A" \
+device XC3S200A \
+package vq100 \
+speed -4 \
+top_level_module_type "HDL" \
+synthesis_tool "XST (VHDL/Verilog)" \
+simulator "ISE Simulator (VHDL/Verilog)" \
+"Preferred Language" "Verilog" \
+"Enable Message Filtering" FALSE \
+"Display Incremental Messages" FALSE
+
+
+##########################################
+# Sources
+##########################################
+TOP_SRCS = \
+fttxdemo.v \
+fttxdemo.ucf \
+ft2232h_count_streamer.v
+
+SOURCES = $(abspath $(TOP_SRCS))
+
+
+##################################################
+# Process Properties
+##################################################
+SYNTHESIZE_PROPERTIES = \
+"Number of Clock Buffers" 24 \
+"Pack I/O Registers into IOBs" Auto \
+"Optimization Effort" Normal \
+"Register Balancing" No \
+"Use Clock Enable" Yes \
+"Use Synchronous Reset" Yes \
+"Use Synchronous Set" Yes \
+"Verilog Macros" "$(CUSTOM_DEFS)"
+
+TRANSLATE_PROPERTIES = ""
+
+MAP_PROPERTIES = \
+"Perform Timing-Driven Packing and Placement" TRUE \
+"Map Effort Level" High \
+"Extra Effort" Normal \
+"Combinatorial Logic Optimization" TRUE \
+"Register Duplication" TRUE \
+"Allow Logic Optimization Across Hierarchy" TRUE \
+"Optimization Strategy (Cover Mode)" Speed \
+"Generate Detailed MAP Report" TRUE \
+"Pack I/O Registers/Latches into IOBs" "For Inputs and Outputs"
+
+PLACE_ROUTE_PROPERTIES = \
+"Place & Route Effort Level (Overall)" High 
+
+STATIC_TIMING_PROPERTIES = \
+"Number of Paths in Error/Verbose Report" 10 \
+"Report Type" "Error Report"
+
+GEN_PROG_FILE_PROPERTIES = \
+"Configuration Rate" 25 \
+"Enable Cyclic Redundancy Checking (CRC)" TRUE \
+"Enable Outputs (Output Events)" 5 \
+"FPGA Start-Up Clock" "JTAG Clock" \
+"Unused IOB Pins" "Float"
+
+SIM_MODEL_PROPERTIES = ""
+
+
+##################################################
+# Icarus Verilog Simulation Configuration
+##################################################
 #iverlog CONFIG
 VERILOG_CMD = iverilog
-#VERILOG_FLAGS = 
 
 # VVP (iverilog runtime engine)
 VVP_CMD = vvp
-#VVP_FLAGS = 
 
 #Simulation Vars
 SIMDIR = simulation
@@ -31,66 +107,16 @@ DUMPTYPE = vcd
 #Viewer
 WAVEFORM_VIEWER = gtkwave
 
-TOPSRC=$(TOPFILE).v
-SIMSRC=ft2232h_demo_tb.v
-DEMOPATH=.
 SOURCEPATH=../src
 SIMDIR=../simulation
-FTTXTB=$(DEMOPATH)/ft2232h_demo_tb.v \
+FTTXTB=ft2232h_demo_tb.v \
 		$(SOURCEPATH)/ft2232h.v \
-		$(SOURCEPATH)/ft2232h_tx.v
-
-FTTXDEMOFILES = $(SOURCEPATH)/ft2232h_tx.v \
-		$(DEMOPATH)/ft2232h_count_streamer.v \
-
-XPROJFILE = $(BUILD_DIR)/fttxdemo.prj
-
-DEVICE=xc3s200a-vq100-4
+		$(SOURCEPATH)/ft2232h_tx.v \
+		ft2232h_count_streamer.v
 
 .PHONY: directories
 
 all: directories default
-
-directories: ${BUILD_DIR}
-
-${BUILD_DIR}:
-	${MKDIR_P} ${BUILD_DIR}
-
-default: $(BUILD_DIR)/$(TOPFILE).bin
-
-
-$(XPROJFILE):$(FTTXDEMOFILES)
-	@echo "Cleanup Xilinx Project File"
-	if [ -e $(XPROJFILE) ]
-		rm -Rf $(XPROJFILE)
-	fi
-
-	@echo "Building Xilinx Project File"
-		
-			
-
-$(BUILD_DIR)/$(TOPFILE).ngc: $(XPROJFILE)
-	echo "run -ifn $(FTTXDEMOFILES) -ifmt Verilog -ofn $(BUILD_DIR)/$(TOPFILE) -p \
-		$(DEVICE) -opt_mode Speed -opt_level 1" | $(XILINX_SYNTH)
-
-$(BUILD_DIR)/$(TOPFILE).ngd: $(BUILD_DIR)/$(TOPFILE).ngc $(TOPFILE).ucf
-	$(XILINX_BUILD) -p $(DEVICE) -uc $(TOPFILE).ucf $(BUILD_DIR)/$(TOPFILE).ngc \
-		$(BUILD_DIR)/$(TOPFILE).ngd
-
-$(BUILD_DIR)/$(TOPFILE).ncd: $(BUILD_DIR)/$(TOPFILE).ngd
-	$(XILINX_MAP) -detail -o $(BUILD_DIR)/$(TOPFILE).ncd \
-		-pr b $(BUILD_DIR)/$(TOPFILE).ngd
-
-$(BUILD_DIR)/parout.ncd: $(BUILD_DIR)/$(TOPFILE).ncd
-	$(XILINX_ROUTE) -w $(BUILD_DIR)/$(TOPFILE).ncd $(BUILD_DIR)/parout.ncd \
-	       	$(BUILD_DIR)/$(TOPFILE).pcf
-
-$(BUILD_DIR)/$(TOPFILE).bit: $(BUILD_DIR)/parout.ncd
-	$(XILINX_BIT) -g CRC:Enable -g StartUpClk:"JtagClk" -g Compress \
-		$(BUILD_DIR)/parout.ncd $(BUILD_DIR)/$(TOPFILE).bit $(BUILD_DIR)/$(TOPFILE).pcf
-
-$(BUILD_DIR)/$(TOPFILE).bin: $(BUILD_DIR)/$(TOPFILE).bit
-	$(XILINX_PROM) -w -p bin -o $(BUILD_DIR)/$(TOPFILE).bin -u 0 $(BUILD_DIR)/$(TOPFILE).bit
 
 simulation:
 	$(VERILOG_CMD) -o $(SIMDIR)/fttxdemo  $(FTTXTB) $(FTTXDEMOFILES)

@@ -51,7 +51,7 @@ module fttxdemo(
 
 	ft2232h_count_streamer uftcount(
       .clk_i(uclk_i),
-      .adbus_o(byte_tx),
+      .adbus_o(byte_io),
       .txe_i(txen_i),
       .wr_o(wr_o),
       .oe_o(oe_o),
@@ -59,7 +59,7 @@ module fttxdemo(
       .blinker_o(blinker_o)
     );
 
-    assign byte_io = (oe_o) ? byte_tx : byte_rx;
+//    assign byte_io = (oe_o) ? byte_tx : byte_rx;
 
 	//assign blinker_o = cnt_r[22];
 
