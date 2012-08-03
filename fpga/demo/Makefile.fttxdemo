@@ -92,7 +92,7 @@ WAVEFORM_VIEWER = gtkwave
 
 SOURCEPATH=../src
 SIMDIR=../simulation
-FTTXTB=ft2232h_demo_tb.v \
+FTTXTB=ft2232h_txdemo_tb.v \
 		$(SOURCEPATH)/ft2232h.v \
 		$(SOURCEPATH)/ft2232h_tx.v \
 		ft2232h_count_streamer.v
