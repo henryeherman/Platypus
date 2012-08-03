@@ -37,7 +37,6 @@ reg [22:0] cnt_r = 'b0;
 reg [7:0] adbus_r = 'b0;
 //reg [7:0] adbus_w; // Not Used
 
-
 // Synchronous State Machine
 always @(negedge clk_i) begin
     write_state <= write_nextstate;
@@ -46,22 +45,26 @@ always @(negedge clk_i) begin
       adbus_r <= adbus_r + 1; // Increment TX Data byte
     end 
 end
+		
 
 // Change state on TXE
 always @(write_state, txe_i, rst_i) begin
-  if(rst_i == `HI) 
+  if(rst_i == `HI) begin
     write_nextstate <= WAIT_TXE_LO;
-  else begin
+    wr_o <= 1;
+    oe_o <= 0; // OK to RX
+  end else begin
     case (write_state)
       WAIT_TXE_LO: begin
         wr_o <= 1;
         oe_o <= 0; // OK to RX
         if ( txe_i == `LO ) begin
           write_nextstate <= WR_LO;  // Next clock enable WRiting
-        end
+        end else
+		    write_nextstate <= WAIT_TXE_LO;
       end
       WR_LO: begin
-        wr_o <=0;  // Enable WRiting
+        wr_o <= 0;  // Enable WRiting
         oe_o <= 1;  // OK to TX
         if( txe_i == `HI)  // Make sure WRiting is not disabled
           write_nextstate <= WAIT_TXE_LO;
@@ -69,14 +72,23 @@ always @(write_state, txe_i, rst_i) begin
           write_nextstate <= WRITING; // Go to WRite state
       end
       WRITING: begin
+		  wr_o <= 0;
+		  oe_o <= 1;
         if( txe_i == `HI) // WRite until TXE goes high
           write_nextstate <= WAIT_TXE_LO;
+		  else
+		    write_nextstate <= WRITING;
       end 
+		default: begin
+			wr_o <= 1;
+			oe_o <= 0;
+			write_nextstate <=WAIT_TXE_LO;
+		end
     endcase
   end
 end
 
 // Recieve or Transmit depending on OE
 assign adbus_o = (oe_o) ? adbus_r : 8'bz; 
-
+assign blinker_o = cnt_r[22];
 endmodule

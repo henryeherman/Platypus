@@ -5,3 +5,4 @@ build
 *.xml
 *.xrpt
 xlnx_auto_0_xdb
+ise

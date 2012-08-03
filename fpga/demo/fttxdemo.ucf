@@ -1,6 +1,7 @@
 net clk_i	loc=p43; #12 MHz clock from pic
+net blinker_o[1] loc=p35; # LED Output
+
 net uclk_i  loc=p44; #60MHz USB Fifo clock
-net blinker_o loc=p36; # LED Output
 net txen_i loc=p68; # TXE#
 net wr_o	loc=p37; # WR#
 net oe_o    loc=p12; # OE#

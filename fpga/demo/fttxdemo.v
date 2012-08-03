@@ -14,7 +14,7 @@
 module fttxdemo(
     input wire clk_i, // 12MHz from MCU
     input wire uclk_i,  // 60MHz from FT2232H
-    output wire blinker_o,      
+    output wire [1:0] blinker_o,
     input wire txen_i,
     output wire wr_o, 
     output wire oe_o,
@@ -22,11 +22,14 @@ module fttxdemo(
     inout wire [7:0] byte_io    
   );
 
-	reg [22:0] cnt_r = 23'b0;
-	reg [7:0] byte_tx;
-    wire [7:0] byte_rx;
-    wire clk_fast;
-    wire reset_w;
+   wire clk_fast;
+   //wire reset_w;
+	reg [25:0] cnt_r = 'b0;
+
+	
+	always @(posedge clk_fast) begin
+		cnt_r = cnt_r+1;
+	end
     	
 	
    // DCM_SP: Digital Clock Manager Circuit
@@ -43,12 +46,6 @@ module fttxdemo(
    );
    // End of DCM_SP_inst instantiation
 
-	//always @(posedge clk_fast)
-	//	begin
-	//		cnt_r = cnt_r + 1;
-	//	end
-
-
 	ft2232h_count_streamer uftcount(
       .clk_i(uclk_i),
       .adbus_o(byte_io),
@@ -56,13 +53,11 @@ module fttxdemo(
       .wr_o(wr_o),
       .oe_o(oe_o),
       .rst_i(reset_w),
-      .blinker_o(blinker_o)
+      .blinker_o(blinker_o[0])
     );
 
-//    assign byte_io = (oe_o) ? byte_tx : byte_rx;
+   assign reset_w = pwren_i;
 
-	//assign blinker_o = cnt_r[22];
-
-    assign reset_w = pwren_i;
-	
+	assign blinker_o[1] = cnt_r[25];
+	//assign blinker_o[0] = cnt_r[31];
 endmodule

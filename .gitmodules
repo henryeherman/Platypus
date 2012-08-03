@@ -1,0 +1,3 @@
+[submodule "fpga/lib/XSTOOLs"]
+	path = fpga/lib/XSTOOLs
+	url = git://github.com/xesscorp/XSTOOLs.git

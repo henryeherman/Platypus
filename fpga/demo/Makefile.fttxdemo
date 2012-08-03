@@ -7,7 +7,7 @@
 # Project Setup
 ##########################################
 TOP_MODULE := fttxdemo
-BUILD_DIR := build/
+BUILD_DIR := $(abspath build)
 
 # set me in custom makefile
 CUSTOM_SRCS = 
@@ -31,11 +31,14 @@ package vq100 \
 speed -4 \
 top_level_module_type "HDL" \
 synthesis_tool "XST (VHDL/Verilog)" \
-simulator "ISE Simulator (VHDL/Verilog)" \
+simulator "ISim (VHDL/Verilog)" \
 "Preferred Language" "Verilog" \
 "Enable Message Filtering" FALSE \
-"Display Incremental Messages" FALSE
-
+"FPGA Start-Up Clock" "JTAG Clock" \
+"Display Incremental Messages" FALSE \
+"Auto Implementation Top" TRUE \
+"Enable Internal Done Pipe" FALSE \
+"Project Description" ""
 
 ##########################################
 # Sources
@@ -47,49 +50,29 @@ ft2232h_count_streamer.v
 
 SOURCES = $(abspath $(TOP_SRCS))
 
-
 ##################################################
 # Process Properties
 ##################################################
-SYNTHESIZE_PROPERTIES = \
-"Number of Clock Buffers" 24 \
-"Pack I/O Registers into IOBs" Auto \
-"Optimization Effort" Normal \
-"Register Balancing" No \
-"Use Clock Enable" Yes \
-"Use Synchronous Reset" Yes \
-"Use Synchronous Set" Yes \
-"Verilog Macros" "$(CUSTOM_DEFS)"
+SYNTHESIZE_PROPERTIES = ""
+
 
 TRANSLATE_PROPERTIES = ""
 
-MAP_PROPERTIES = \
-"Perform Timing-Driven Packing and Placement" TRUE \
-"Map Effort Level" High \
-"Extra Effort" Normal \
-"Combinatorial Logic Optimization" TRUE \
-"Register Duplication" TRUE \
-"Allow Logic Optimization Across Hierarchy" TRUE \
-"Optimization Strategy (Cover Mode)" Speed \
-"Generate Detailed MAP Report" TRUE \
-"Pack I/O Registers/Latches into IOBs" "For Inputs and Outputs"
+MAP_PROPERTIES = ""
 
-PLACE_ROUTE_PROPERTIES = \
-"Place & Route Effort Level (Overall)" High 
+PLACE_ROUTE_PROPERTIES = ""
 
-STATIC_TIMING_PROPERTIES = \
-"Number of Paths in Error/Verbose Report" 10 \
-"Report Type" "Error Report"
+STATIC_TIMING_PROPERTIES = ""
 
 GEN_PROG_FILE_PROPERTIES = \
-"Configuration Rate" 25 \
 "Enable Cyclic Redundancy Checking (CRC)" TRUE \
-"Enable Outputs (Output Events)" 5 \
 "FPGA Start-Up Clock" "JTAG Clock" \
+"Enable Internal Done Pipe" FALSE \
 "Unused IOB Pins" "Float"
 
 SIM_MODEL_PROPERTIES = ""
-
+#\
+#"Compile EDK Simulation Library" TRUE
 
 ##################################################
 # Icarus Verilog Simulation Configuration
@@ -127,7 +110,4 @@ ifdef VIEW
 endif
 
 
-.PHONY: clean
-clean:
-	rm -Rf *.lst *.xml *.xrpt ./_xmsgs ./xst ./xlnx_auto_0_xdb ./build
 	
