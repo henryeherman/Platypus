@@ -4,7 +4,7 @@
 *.swp
 *.vcd
 *.ignore
-ignorei
+*.pyc
 fpga/simulation
 fpga/simulation/*
 build
