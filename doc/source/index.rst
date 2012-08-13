@@ -17,7 +17,7 @@ Currently UCLA is collaborating with `Virtgina Tech <http://www.vt.edu/>`_, `Uni
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :numbered:
 
    purpose
    buildinst

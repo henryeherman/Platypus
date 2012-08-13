@@ -128,13 +128,10 @@ initial
 always @(*)
     $display("RX from PC:\t %t \t%H", $realtime, hex[7:0]);
 
-//always @(*)
-//    $display("FIFO OUT: %d", fifo_data_out);
-
 assign data = fifo_data_out;
 assign rdclk = clk_i;
 assign rxf_o = rdempty;
-//assign rdreq = !rd_i; 
 assign rdreq = rdreq_r;
-endmodule // read_pattern
+
+endmodule 
 

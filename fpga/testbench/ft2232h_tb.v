@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
-`define TESTRX
-`define TESTTX
+`define TESTRX 1
+`define TESTTX 1
 
 module ft2232h_tb;
 wire clkout_w;
@@ -95,7 +95,8 @@ ft2232h uft2232h(
 .oe_i(oe_r),
 .txe_o(txe_w),
 .rd_i(rd_r),
-.wr_i(wr_r)
+.wr_i(wr_r),
+.reset_i(!rdreset)
 );
 
 

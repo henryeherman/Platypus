@@ -56,6 +56,16 @@ Libftdi
 The `libftdi <http://www.intra2net.com/en/developer/libftdi/>`_ is a cross platform open source driver that allows developers to write software to communicate with the many FTDI chip variants.
 The Platypus DAQ uses the `FT2232H <http://www.ftdichip.com/Products/ICs/FT2232H.htm>`_ in FT245 synchronous mode to stream data at upto a blistering 60MB/s!  This is alot of data!  The libftdi driver lets us focus on the application.
 
+`libusb <http://www.libusb.org/>`_ is required to install libftdi.  
+
+Ubuntu and Debian
+^^^^^^^^^^^^^^^^^
+
+.. code-block:: bash
+        $ sudo apt-get install libusb-1.0-0-dev
+
+
+
 Ubuntu and Debian
 ~~~~~~~~~~~~~~~~~
 Install on Ubuntu and Debian is simple thanks to ``apt-get``. Run the following command from the terminal:

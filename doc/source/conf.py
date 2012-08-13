@@ -83,6 +83,13 @@ exclude_patterns = []
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+from sphinx.highlighting import lexers
+from pygments.lexers import VerilogLexer
+lexers['verilog'] = VerilogLexer()
+primary_domain = "verilog" 
+
+
+
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 

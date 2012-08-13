@@ -26,13 +26,11 @@ initial begin
 end
 
 // TX Process
-always @ (posedge clkout_i) begin
-        if ((txe_i == `LO) && (wr_i == `LO)) begin
+always @ (clkout_i) begin
+        if (!clkout_i &(txe_i == `LO) && (wr_i == `LO)) begin
                 $fwrite(outfile,"%x\n", data);
                 $display("  TX to PC:\t %t \t%H",$realtime, data); 
         end
 end
-
-
 
 endmodule

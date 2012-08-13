@@ -45,7 +45,7 @@ always @(negedge clk_i) begin
       adbus_r <= adbus_r + 1; // Increment TX Data byte
     end 
 end
-		
+
 
 // Change state on TXE
 always @(write_state, txe_i, rst_i) begin

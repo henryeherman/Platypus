@@ -99,7 +99,7 @@ endif
 
 
 ft2232h_tb:  
-	$(VERILOG_CMD) -o $(SIMDIR)/ft2232h_tb $(FT2232TBFILES)
+	$(VERILOG_CMD) -DTESTRX -DTESTTX -o $(SIMDIR)/ft2232h_tb $(FT2232TBFILES)
 	$(VVP_CMD) $(SIMDIR)/ft2232h_tb -$(DUMPTYPE) $(VVP_FLAGS)
 	mv dump.$(DUMPTYPE) $(SIMDIR)/ft2232h_tb.$(DUMPTYPE)
 ifdef VIEW
