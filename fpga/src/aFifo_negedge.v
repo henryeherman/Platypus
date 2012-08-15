@@ -70,7 +70,7 @@ module aFifo_negedge
        (.GrayCount_out(pNextWordToRead),
         .Enable_in(NextReadAddressEn),
         .Clear_in(clear),
-        .Clk(rdclk)
+        .Clk(!rdclk)
        );
      
 

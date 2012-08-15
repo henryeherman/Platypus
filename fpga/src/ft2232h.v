@@ -1,6 +1,4 @@
 `timescale 1ns/1ps
-//`define TESTRX 1
-//`define TESTTX 1
 `define LO     0
 `define HI     1
 

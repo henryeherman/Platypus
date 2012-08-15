@@ -1,4 +1,3 @@
-`timescale 1ns / 1ps
 //#===================================================
 // File Name: ftrxdemo.v
 // Description: This Demo shows how to stream data
@@ -10,6 +9,10 @@
 // Email: hherman@ucla.edu
 // LAB: NESL @ UCLA <http://nesl.ee.ucla.edu/>  
 //#===================================================
+
+`timescale 1ns / 1ps
+`define HI  1
+`define LO  0
 
 module ftrxdemo(
     input wire clk_i, // 12MHz from MCU
@@ -79,9 +82,11 @@ module ftrxdemo(
     end
   end
   
-  always @(posedge uclk_i) begin
-    data_tx <= 8'b0;
-    data_rx = byte_io;
+  always @(uclk_i) begin
+    if (uclk_i == `LO) begin
+      data_tx <= 8'b0;
+      data_rx = byte_io;
+    end
   end
 
   assign byte_io = (oe_o) ? data_tx : 8'bz;

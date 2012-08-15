@@ -1,0 +1,9 @@
+// This is a pattern file
+// time bin dec hex
+64: 01
+128: 20
+256: FF
+300: EF
+364: 23
+400: 22
+416: 03

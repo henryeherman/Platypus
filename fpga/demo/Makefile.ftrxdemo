@@ -1,4 +1,4 @@
-# Makefile to build FT2232H TX Counter Demo
+# Makefile to build FT2232H RX Counter Demo
 # Author: Henry Herman
 # Email: hherman@ucla.edu
 # Uses USRP Build System
@@ -6,7 +6,7 @@
 ##########################################
 # Project Setup
 ##########################################
-TOP_MODULE := fttxdemo
+TOP_MODULE := ftrxdemo
 BUILD_DIR := $(abspath build)
 
 # set me in custom makefile
@@ -44,9 +44,8 @@ simulator "ISim (VHDL/Verilog)" \
 # Sources
 ##########################################
 TOP_SRCS = \
-fttxdemo.v \
-fttxdemo.ucf \
-ft2232h_count_streamer.v
+ftrxdemo.v \
+ftrxdemo.ucf
 
 SOURCES = $(abspath $(TOP_SRCS))
 
@@ -92,21 +91,23 @@ WAVEFORM_VIEWER = gtkwave
 
 SOURCEPATH=../src
 SIMDIR=../simulation
-FTTXTB=ft2232h_txdemo_tb.v \
+FTRXTB=ft2232h_rxdemo_tb.v \
 		$(SOURCEPATH)/ft2232h.v \
-		$(SOURCEPATH)/ft2232h_tx.v \
-		ft2232h_count_streamer.v
+		$(SOURCEPATH)/ft2232h_rx.v \
+		$(SOURCEPATH)/aFifo_negedge.v \
+		$(SOURCEPATH)/GrayCounter.v \
+		ft2232h_led_controller.v
 
 .PHONY: directories
 
 all: directories default
-
+#-DTESTRX 
 simulation:
-	$(VERILOG_CMD) -DTESTTX -o $(SIMDIR)/fttxdemo  $(FTTXTB) $(FTTXDEMOFILES)
-	$(VVP_CMD) $(SIMDIR)/fttxdemo -$(DUMPTYPE) $(VVP_FLAGS)
-	mv dump.$(DUMPTYPE) $(SIMDIR)/fttxdemo.$(DUMPTYPE)
+	$(VERILOG_CMD) -DTESTRX -o $(SIMDIR)/ftrxdemo  $(FTRXTB) 
+	$(VVP_CMD) $(SIMDIR)/ftrxdemo -$(DUMPTYPE) $(VVP_FLAGS)
+	mv dump.$(DUMPTYPE) $(SIMDIR)/ftrxdemo.$(DUMPTYPE)
 ifdef VIEW
-	$(WAVEFORM_VIEWER) $(SIMDIR)/fttxdemo.$(DUMPTYPE)
+	$(WAVEFORM_VIEWER) $(SIMDIR)/ftrxdemo.$(DUMPTYPE)
 endif
 
 

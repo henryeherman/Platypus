@@ -1062,21 +1062,21 @@ Connecting the FT2232H Breakout to the XULA
 
 .. _ftconnect0:   
 .. figure:: ../img/XULA2FT2232H-1.jpg
-   :scale: 20 %
+   :scale: 40 %
    :alt: FT2232H Connect to XULA ground 
 
    Connect FT2232H ground to XULA
 
 .. _ftconnect1:   
 .. figure:: ../img/XULA2FT2232H-3.jpg
-   :scale: 20 %
+   :scale: 40 %
    :alt: FT2232H Connect control signals to XULA 
 
    Connect FT2232H control singals to XULA
 
 .. _ftconnect1:   
 .. figure:: ../img/XULA2FT2232H-4.jpg
-   :scale: 20 %
+   :scale: 40 %
    :alt: FT2232H Connect control signals to XULA 
 
    Connect FT2232H data singals to XULA

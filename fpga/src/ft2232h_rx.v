@@ -1,4 +1,4 @@
-`timescale 1ns / 10 ps
+`timescale 1ns/1ps
 `define EOF 32'hFFFF_FFFF
 `define NULL 0
 `define MAX_LINE_LENGTH 1000
@@ -71,6 +71,7 @@ aFifo_negedge #(.DATA_WIDTH(8), .ADDRESS_WIDTH(4)) ufifo
 // Initialize and read in data from file to mimic data from USB host
 initial
     begin : file_block
+    $display("In RX Mod");
     rdreq_r = 0;
     aclr = 0;#5;
     wrreq = 0; 
@@ -82,7 +83,7 @@ initial
 
     $timeformat(-9, 2, "ns", 6);
     //$display("time bin decimal hex");
-    file = $fopenr("testbench/fromPc.tv");
+    file = $fopenr("testvectors/fromPc.tv");
     if (file == `NULL) begin
        $display("Could not open file"); 
        $finish;
@@ -90,7 +91,7 @@ initial
     c = $fgetc(file);
     while (c != `EOF)
         begin
-        /* Check the first character for comment */
+        // Check the first character for comment
         if (c == "/")
             r = $fgets(line, file);
         else
