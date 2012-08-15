@@ -1,19 +1,19 @@
 `timescale 1ns/1ps
-//==========================================
+//=============================================================================
 //
 // File Name: ft2232h_demo_rx_tb.v
-// Function : Simulate TX Demo Stream to FT2232H in FT245 Synchronous Mode 
+// Function : Simulate TX Demo Stream to 
+//            FT2232H in FT245 Synchronous Mode 
 // Coder    : Henry Herman
 // Date     : July 25, 2012
 // Location : Written at UCLA NESL < http://nesl.ee.ucla.edu/ >
 // Notes    : This is a quick demo to show a Xilinix Spartan 3
 //            FPGA streaming data continuously from the FT2232H USB UART/FIFO
-//            IC.
 //            It is a proof of concept showing how to correctly receive data
 //            from the FT IC to the FPGA
 //            It is included in the platypus daq project to show
 //            how it was developed. 
-//=========================================
+//==============================================================================
 
 `define HI  1
 `define LO  0
@@ -40,7 +40,7 @@ initial begin
         reset_r = `LO;
         #10;
         reset_r = `LO;
-        #1000;
+        #10000;
         $finish;
 end
 

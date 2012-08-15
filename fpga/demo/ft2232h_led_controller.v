@@ -22,7 +22,10 @@ module ft2232h_led_controller
 #( parameter WAIT_FOR_RDREQ = 1'b0,
              READING = 1'b1,
 
-             PREAMBLE = 8'hAA)
+             CMD_EMPTY = 8'h00,
+             CMD_PREAMBLE = 8'hAA,
+             CMD_SETLED = 8'h01
+)             
 (
   input wire clk_i,
   input wire rxf_i,
@@ -37,7 +40,26 @@ module ft2232h_led_controller
 reg read_state = WAIT_FOR_RDREQ;
 reg read_nextstate = WAIT_FOR_RDREQ;
 
-reg cmd_state;
+reg [7:0] cmdmsg_m[0:2];
+
+reg [7:0] tmpcmd;
+
+reg [1:0] cmdcount = 2'd0;
+integer bytecount = 0;
+
+reg [7:0] cmdmsg_m_0;
+reg [7:0] cmdmsg_m_1;
+reg [7:0] cmdmsg_m_2;
+
+
+initial begin
+  cmdmsg_m[0] = CMD_EMPTY;
+  cmdmsg_m[1] = CMD_EMPTY;
+  cmdmsg_m[3] = CMD_EMPTY;
+  cmdmsg_m_0 = CMD_EMPTY;
+  cmdmsg_m_1 = CMD_EMPTY;
+  cmdmsg_m_2 = CMD_EMPTY;
+end
 
 always@(posedge clk_i) begin
   read_state <= read_nextstate;  
@@ -67,13 +89,45 @@ always @(read_state, oe_i, rxf_i, rst_i) begin
 end
 
 
-// TODO: Turn this into a statemachine!
-always @(negedge clk_i) begin
-  if (clk_i == `LO && rd_o==`LO) begin
-    led_r = data_i;
-    $display("LED VALUE: \t %H", led_r);
+always @(negedge clk_i, rst_i) begin
+  if(rst_i == `HI) begin
+    cmdmsg_m[0] = CMD_EMPTY;
+    cmdmsg_m[1] = CMD_EMPTY;
+    cmdmsg_m[2] = CMD_EMPTY;
+    cmdmsg_m_0 = CMD_EMPTY;
+    cmdmsg_m_1 = CMD_EMPTY;
+    cmdmsg_m_2 = CMD_EMPTY;
+    bytecount = 0;
+  end else begin
+    if(rd_o == `LO) begin
+      cmdmsg_m[2] = cmdmsg_m[1];
+      cmdmsg_m[1] = cmdmsg_m[0];
+      cmdmsg_m[0] = data_i;
+      
+      cmdmsg_m_2 = cmdmsg_m_1;
+      cmdmsg_m_1 = cmdmsg_m_0;
+      cmdmsg_m_0 = data_i;
+      bytecount = bytecount + 1;
+    end
   end
 end
 
+always @(bytecount) begin
+  if (cmdmsg_m[2] == CMD_PREAMBLE && cmdcount == 0) begin
+    $display("REC:PREAMBLE");
+    $display("CMD:%x%x%x",cmdmsg_m[2],cmdmsg_m[1],cmdmsg_m[0]);
+    cmdcount = 2'd3;
+    case (cmdmsg_m[1])
+      CMD_SETLED:
+        led_r = cmdmsg_m[0];
+      default: begin
+      end
+    endcase
+  end else if (cmdcount > 0) 
+    cmdcount = cmdcount - 1;
+end
+
+always @(led_r)
+  $display("LEDVAL:%x",led_r);
 
 endmodule

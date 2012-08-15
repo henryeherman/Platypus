@@ -39,7 +39,7 @@ initial begin
         reset_r = 1;
         #10;
         reset_r = 0;
-        #10000;
+        #100000;
         $finish;
 end
 

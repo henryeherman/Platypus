@@ -45,7 +45,7 @@ module aFifo_negedge
         if (rdreq & !rdempty)
             q_int <= Mem[pNextWordToRead];
 
-    assign #5 q = Mem[pNextWordToRead];            
+    assign  q = Mem[pNextWordToRead];            
     //'data' logic:
     always @ (posedge wrclk)
         if (wrreq & !wrfull)
