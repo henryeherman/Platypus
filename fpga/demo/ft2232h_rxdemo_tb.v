@@ -40,7 +40,7 @@ initial begin
         reset_r = `LO;
         #10;
         reset_r = `LO;
-        #10000;
+        #1000;
         $finish;
 end
 
@@ -58,7 +58,6 @@ end
 
 ft2232h uft2232h(
 .data(data_w),
-.rxf_o(),
 .clkout_o(clkout_w),
 .oe_i(oe_r),
 .rxf_o(rxf_w),

@@ -15,12 +15,21 @@
 //=========================================
 
 `timescale 1ns/1ps
+//`define TESTBENCH
 `define HI  1
 `define LO  0
+
 
 module ft2232h_led_controller
 #( parameter WAIT_FOR_RDREQ = 1'b0,
              READING = 1'b1,
+
+             CMD_MSGLEN = 3,
+             CMD_PARAMLEN = CMD_MSGLEN - 2,
+            
+             CMD_PREAMBLEPTR = CMD_MSGLEN - 1,
+             CMD_CMDPTR = CMD_PREAMBLEPTR - 1,
+             CMD_PARAMPTR = CMD_CMDPTR - 1,
 
              CMD_EMPTY = 8'h00,
              CMD_PREAMBLE = 8'hAA,
@@ -40,25 +49,20 @@ module ft2232h_led_controller
 reg read_state = WAIT_FOR_RDREQ;
 reg read_nextstate = WAIT_FOR_RDREQ;
 
-reg [7:0] cmdmsg_m[0:2];
+reg [7:0] cmdmsg_m[0:CMD_MSGLEN-1];
+
+reg [7:0] cmd_pre;
 
 reg [7:0] tmpcmd;
 
-reg [1:0] cmdcount = 2'd0;
+integer cmdcount = 0;
+
 integer bytecount = 0;
 
-reg [7:0] cmdmsg_m_0;
-reg [7:0] cmdmsg_m_1;
-reg [7:0] cmdmsg_m_2;
-
+integer jj;
 
 initial begin
-  cmdmsg_m[0] = CMD_EMPTY;
-  cmdmsg_m[1] = CMD_EMPTY;
-  cmdmsg_m[3] = CMD_EMPTY;
-  cmdmsg_m_0 = CMD_EMPTY;
-  cmdmsg_m_1 = CMD_EMPTY;
-  cmdmsg_m_2 = CMD_EMPTY;
+  initialize_msg();
 end
 
 always@(posedge clk_i) begin
@@ -91,35 +95,30 @@ end
 
 always @(negedge clk_i, rst_i) begin
   if(rst_i == `HI) begin
-    cmdmsg_m[0] = CMD_EMPTY;
-    cmdmsg_m[1] = CMD_EMPTY;
-    cmdmsg_m[2] = CMD_EMPTY;
-    cmdmsg_m_0 = CMD_EMPTY;
-    cmdmsg_m_1 = CMD_EMPTY;
-    cmdmsg_m_2 = CMD_EMPTY;
+    initialize_msg();
     bytecount = 0;
   end else begin
-    if(rd_o == `LO) begin
-      cmdmsg_m[2] = cmdmsg_m[1];
-      cmdmsg_m[1] = cmdmsg_m[0];
+    if(clk_i == `LO & rd_o == `LO) begin
+      for(jj=CMD_MSGLEN-1;jj>0;jj=jj-1)
+        cmdmsg_m[jj] = cmdmsg_m[jj-1];
       cmdmsg_m[0] = data_i;
-      
-      cmdmsg_m_2 = cmdmsg_m_1;
-      cmdmsg_m_1 = cmdmsg_m_0;
-      cmdmsg_m_0 = data_i;
+`ifdef TESTBENCH
+      $display("DATA:%x",data_i);
+`endif
       bytecount = bytecount + 1;
     end
   end
 end
 
 always @(bytecount) begin
-  if (cmdmsg_m[2] == CMD_PREAMBLE && cmdcount == 0) begin
-    $display("REC:PREAMBLE");
-    $display("CMD:%x%x%x",cmdmsg_m[2],cmdmsg_m[1],cmdmsg_m[0]);
-    cmdcount = 2'd3;
-    case (cmdmsg_m[1])
+  if (cmdmsg_m[CMD_PREAMBLEPTR] == CMD_PREAMBLE && cmdcount == 0) begin
+`ifdef TESTBENCH
+    $display("CMD:%x%x%x",cmdmsg_m[CMD_PREAMBLEPTR],cmdmsg_m[CMD_CMDPTR],cmdmsg_m[CMD_PARAMPTR]);
+`endif
+    cmdcount = CMD_MSGLEN-1;
+    case (cmdmsg_m[CMD_CMDPTR])
       CMD_SETLED:
-        led_r = cmdmsg_m[0];
+        led_r = cmdmsg_m[CMD_PARAMPTR];
       default: begin
       end
     endcase
@@ -127,7 +126,16 @@ always @(bytecount) begin
     cmdcount = cmdcount - 1;
 end
 
+
+`ifdef TESTBENCH
 always @(led_r)
   $display("LEDVAL:%x",led_r);
+`endif
+
+task initialize_msg;
+  integer ii;
+  for(ii=0;ii<CMD_MSGLEN;ii=ii+1)      
+    cmdmsg_m[ii] = 8'b0;      
+endtask
 
 endmodule

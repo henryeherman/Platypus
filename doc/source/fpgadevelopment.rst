@@ -173,9 +173,7 @@ Lets take a look at the FT2232 synchronous mode waveforms
 Immeadiately it is clear that the receice portion of the FT2232H is more complicated to simulate than the transmit portion.  
 There are a couple reasons for this.  
 
-First, looking at the signal waveforms for.. code-block:: bash
-
-        $ sudo port install iverilog gtkwave receiving data. It is clear there are more
+First, looking at the signal waveforms for receiving data. It is clear there are more
 signals to manage than on the transmit side.  Our simulator must control RXF#, informing our device when data is available.
 It must also monitor OE#, allowing either the FT2232H or the external device to drive the data bus.
 The RD# signal controls when the memory pointer will advance forward.
@@ -1039,8 +1037,8 @@ Testing can be done by looking at the clock output pin. :ref:`ft2232hclkpinbot`.
 Hook up an ocsilliscope to pin the high speed clock output. :ref:`ft2232h60MHzosc`
 
 When you first hook up the FT2232H breakout board to your scope and plug it in, you maybe surprised to see *nothing*.  
-**DON'T PANIC** you need to connect to the board and start streaming data for the clock to start.  
-  the libftdi library comes with a nice litte example "stream_test" run this file from the commandline::
+**DON'T PANIC** you need to connect to the board and start streaming data for the clock to start.
+The libftdi library comes with a nice litte example "stream_test" run this file from the commandline:
 
 .. code-block:: bash
 
@@ -1074,7 +1072,7 @@ Connecting the FT2232H Breakout to the XULA
 
    Connect FT2232H control singals to XULA
 
-.. _ftconnect1:   
+.. _ftconnect2:   
 .. figure:: ../img/XULA2FT2232H-4.jpg
    :scale: 40 %
    :alt: FT2232H Connect control signals to XULA 
@@ -1143,4 +1141,307 @@ When the number reaches 255 it will overflow and return to 0.
 I made a `video <http://youtu.be/Y7IGE4g19gI>`_ showing the data streaming from the FPGA counter.
 
 
+FT2232H Synchronous Mode Receive Demo
+#####################################
 
+Something like a DAQ, really needs data to be able to flow both ways.  
+That is, it would be nice to be able to do thinks like changing the sample rate,
+stop sampling, start sampling, and sample on a trigger.
+To do this we need to be able to send commands to the our FPGA.
+To show how this is possible I produced a demonstration of receiving data
+from the pc and translating that data into commands for processing.
+
+Verilog Module To Run Commands On FPGA
+**************************************
+
+The FT2232H receives each byte in parallel.  Ideally there would be a way to translate 
+the incoming bytes into a message of arbitrary length
+and then parse the contents for actions to be conducted.  
+These actions could be anything from turing on LEDs, changing clock rate, or toggling IO pins.
+
+One possible way of doing this is demonstrated in ``ft2232h_led_controller.v``:
+
+.. code-block:: verilog
+        :linenos:
+
+        `timescale 1ns/1ps
+        //`define TESTBENCH
+        `define HI  1
+        `define LO  0
+
+
+        module ft2232h_led_controller
+        #( parameter WAIT_FOR_RDREQ = 1'b0,
+                     READING = 1'b1,
+
+                     CMD_MSGLEN = 3,
+                     CMD_PARAMLEN = CMD_MSGLEN - 2,
+                    
+                     CMD_PREAMBLEPTR = CMD_MSGLEN - 1,
+                     CMD_CMDPTR = CMD_PREAMBLEPTR - 1,
+                     CMD_PARAMPTR = CMD_CMDPTR - 1,
+
+                     CMD_EMPTY = 8'h00,
+                     CMD_PREAMBLE = 8'hAA,
+                     CMD_SETLED = 8'h01
+        )             
+        (
+          input wire clk_i,
+          input wire rxf_i,
+          input wire [7:0] data_i,
+          input wire oe_i,  
+          output reg rd_o, 
+          input wire rst_i,
+          output reg [7:0] led_r=8'b0
+
+        );
+
+        reg read_state = WAIT_FOR_RDREQ;
+        reg read_nextstate = WAIT_FOR_RDREQ;
+
+        reg [7:0] cmdmsg_m[0:CMD_MSGLEN-1];
+
+        reg [7:0] cmd_pre;
+
+        reg [7:0] tmpcmd;
+
+        integer cmdcount = 0;
+
+        integer bytecount = 0;
+
+        integer jj;
+
+        initial begin
+          initialize_msg();
+        end
+
+        always@(posedge clk_i) begin
+          read_state <= read_nextstate;  
+        end
+
+        always @(read_state, oe_i, rxf_i, rst_i) begin
+          if(rst_i == `HI) begin
+            read_nextstate <= WAIT_FOR_RDREQ;
+          end else begin
+            case (read_state)
+              WAIT_FOR_RDREQ: begin
+                rd_o = `HI;
+                if(oe_i == `LO && rxf_i == `LO)
+                  read_nextstate = READING;          
+              end
+              READING: begin
+                if(oe_i==`HI | rxf_i == `HI) begin
+                  rd_o = `HI;
+                  read_nextstate = WAIT_FOR_RDREQ;
+                end else
+                  rd_o = `LO;
+              end
+              default:
+                read_nextstate = WAIT_FOR_RDREQ;
+            endcase
+          end
+        end
+
+
+        always @(negedge clk_i, rst_i) begin
+          if(rst_i == `HI) begin
+            initialize_msg();
+            bytecount = 0;
+          end else begin
+            if(clk_i == `LO & rd_o == `LO) begin
+              for(jj=CMD_MSGLEN-1;jj>0;jj=jj-1)
+                cmdmsg_m[jj] = cmdmsg_m[jj-1];
+              cmdmsg_m[0] = data_i;
+        `ifdef TESTBENCH
+              $display("DATA:%x",data_i);
+        `endif
+              bytecount = bytecount + 1;
+            end
+          end
+        end
+
+        always @(bytecount) begin
+          if (cmdmsg_m[CMD_PREAMBLEPTR] == CMD_PREAMBLE && cmdcount == 0) begin
+        `ifdef TESTBENCH
+            $display("CMD:%x%x%x",cmdmsg_m[CMD_PREAMBLEPTR],cmdmsg_m[CMD_CMDPTR],cmdmsg_m[CMD_PARAMPTR]);
+        `endif
+            cmdcount = CMD_MSGLEN-1;
+            case (cmdmsg_m[CMD_CMDPTR])
+              CMD_SETLED:
+                led_r = cmdmsg_m[CMD_PARAMPTR];
+              default: begin
+              end
+            endcase
+          end else if (cmdcount > 0) 
+            cmdcount = cmdcount - 1;
+        end
+
+
+        `ifdef TESTBENCH
+        always @(led_r)
+          $display("LEDVAL:%x",led_r);
+        `endif
+
+        task initialize_msg;
+          integer ii;
+          for(ii=0;ii<CMD_MSGLEN;ii=ii+1)      
+            cmdmsg_m[ii] = 8'b0;      
+        endtask
+
+        endmodule  
+
+       
+This module is slightly more complicated than the other modules we have developed.
+A state machine acts to wait for new bytes to arrive from the host.
+When new data is available it gates the data out by lowering the ``rd_o`` signal.
+When the FIFO on the FT2232H is empty is raises ``rd_o``.  
+The synchronous 60MHz ``clk_i`` signal clocks the data out.
+
+Data is then pushed into a byte array ``cmdmsg_m``.  
+The length of this buffer can be controlled by modifying the parameter ``CMD_MSGLEN``.
+``CMD_MSGLEN`` defaults to 3.  All *command messages* are deliminated by a preamble.
+By deafult the preamble, ``CMD_PREAMBLE``, defaults to ``0xAA``.  
+The byte immeadiately following the preamble it the command byte and determines the action to be executed.
+All remaining bytes, by default 1, are considered parameters and the developer can do what he likes with them.
+
+In the ``ft2232h_led_controller`` module an "set led command", ``CMD_SETLED``, 
+allows the 8-bit value stored in the ``led_r`` to change.
+Some additional considerations were needed.
+In the case where we are currenltly executing a command 
+the parameter or the command may take on the value ``0xAA``, 
+to avoid missing this command, when the ``0xAA`` byte us received a command counter begins.
+The command counter ``cmdcount`` prevents a command from being executed till the entire message has been loaded.
+
+Simulating the Receive Demo
+***************************
+Since, we have a working verilog simulation model of the FT2232H we can test our ``ft2232h_led_controller``.
+The simulation testbench for the RX demo is located in ``ft2232h_rxdemo_tb.v``:
+
+.. code-block:: verilog
+        :linenos:
+     
+        `define HI  1
+        `define LO  0
+
+        module ft2232h_demo_rx_tb;
+
+        wire clkout_w;
+        reg oe_r;
+        wire rd_w;
+        wire rxf_w;
+        wire [7:0] data_w;
+        wire txe_w;
+
+        wire [7:0] led_w;
+
+        reg reset_r;
+        wire reset_n;
+
+        initial begin
+                $dumpvars;
+                oe_r = `LO;
+                reset_r = `LO;
+                #10;
+                reset_r = `LO;
+                #10;
+                reset_r = `LO;
+                #1000;
+                $finish;
+        end
+
+        assign reset_n = !reset_r;
+
+
+        always @(posedge clkout_w) begin
+          if (rxf_w == `LO)
+            oe_r = `LO;
+          else
+            oe_r = `HI;
+        end
+
+        // Simulated FT2232H
+
+        ft2232h uft2232h(
+        .data(data_w),
+        .clkout_o(clkout_w),
+        .oe_i(oe_r),
+        .rxf_o(rxf_w),
+        .rd_i(rd_w),
+        .wr_i(wr_w),
+        .reset_i(reset_n)
+        );
+
+        // Led Controller
+
+        ft2232h_led_controller ledctrl(
+        .clk_i(clkout_w),
+        .rxf_i(rxf_w),
+        .data_i(data_w),
+        .oe_i(oe_r),
+        .rd_o(rd_w),
+        .rst_i(reset_r),
+        .led_r(led_w)
+        );
+
+        endmodule
+
+
+This testbench initialize both a ``ft2232h`` and a ``ft2232h_led_controller``.
+It connects the two modules with correct signals.
+
+
+Running the RX Demo Simulation
+******************************
+I have included a makefile (``Makefile.ftrxdemo``) that can be used
+to both simulate the data streaming from the PC and 
+synthesize the project for the XULA development board.
+
+The run the simulation run:
+
+.. code-block:: bash
+        
+        $ make -f Makefile.ftrxdemo VIEW=y simulation
+
+
+The will open a GTKWave window that can be used to visualize the signal waveforms
+:ref:`ftrxsimres`
+
+.. _ftrxsimres:
+.. figure:: ../img/ftrxdemo_sim.png
+   :scale: 80%
+   :alt: FT245 Synchronous Mode Signal Waveforms
+
+   Results of the FT2232H led control simulation
+
+The signals of the greatest interest are ``clkout_w``, ``data_w``, ``rd_w``
+and ``led_w``.  Notice that LED only changes after first receiving ``0xAA``
+followed by ``0x01`` and then the value to change too.
+
+The bytes sent from the computer are stored in ``testvectors/fromPc.tv``.  
+The first number represents the absolute time in miliseconds when the byte arrives.
+The second two hexadecimal digits represent the contents of the byte.::
+
+        64: 01
+        128: AA
+        192: F1
+        256: A0
+        320: AA
+        384: 01
+        448: AA
+        512: AA
+        576: 01
+        610: FF
+        700: F1
+        732: F1
+
+Notice that we send out first complete message at 256ms, ``0xAAF1A0``.  
+But since the command for an LED change is 0x01, nothing is executed.
+Our second command is complete at 448ms.
+The contents of this message is ``0xAA01AA``.
+This tells out FPGA to change the LEDs to ``0xAA``.
+The final command is finished at 610ms.
+Again we receive an LED command and the value is changed to ``0xFF``.
+If you look closely at the simulation results in the GTKWave window you
+will clearly see that the initial value of the ``led_r`` byte is ``0x00``
+it changes to ``0xAA`` and then finally to ``0xFF``.  
+This agrees exactly with what we would expect.

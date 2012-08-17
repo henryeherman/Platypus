@@ -41,11 +41,11 @@ module aFifo_negedge
     //Data ports logic:
     //(Uses a dual-port RAM).
     //'q' logic:
-    always @ (negedge rdclk, posedge rdclk)
+    always @ (posedge rdclk, posedge rdclk)
         if (rdreq & !rdempty)
-            q_int <= Mem[pNextWordToRead];
+            q_int <= #5 Mem[pNextWordToRead];
 
-    assign  q = Mem[pNextWordToRead];            
+    assign #5 q = Mem[pNextWordToRead];            
     //'data' logic:
     always @ (posedge wrclk)
         if (wrreq & !wrfull)
@@ -70,7 +70,7 @@ module aFifo_negedge
        (.GrayCount_out(pNextWordToRead),
         .Enable_in(NextReadAddressEn),
         .Clear_in(clear),
-        .Clk(!rdclk)
+        .Clk(rdclk)
        );
      
 

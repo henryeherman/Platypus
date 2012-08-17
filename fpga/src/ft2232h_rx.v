@@ -4,6 +4,7 @@
 `define MAX_LINE_LENGTH 1000
 `define HI   1
 `define LO   0
+//`define DEBUGRX
 
 module ft2232h_rx(
 data,
@@ -47,12 +48,17 @@ wire wrfull;
 wire rdfull;
 
 
+reg temp = 0;
 
 always @(rdclk) begin
+
+        if(rdclk == `LO && oe_i == `LO) rdreq_r=!rd_i;
+     /* 
         if(rdclk == `LO && oe_i == `LO && rdreq_r==`LO) rdreq_r = `HI;
         else if(rdclk == `LO && rdreq_r == `LO) rdreq_r = `LO;
         else if(rd_i == `LO) rdreq_r = `HI;
         else if(rd_i == `HI || oe_i == `HI) rdreq_r = `LO;
+        */
 end
 
 // Asynchronous "aFifo" to allow data transmission between two clock domains
@@ -124,10 +130,15 @@ initial
     
     end // initial
 
-
 // Display changes to the signals
-always @(*)
-    $display("RX from PC:\t %t \t%H", $realtime, hex[7:0]);
+`ifdef DEBUGRX
+always @(rdclk) begin
+  if(rdclk==`LO & rd_i == `LO) begin
+     temp = !temp;
+     $display("PC:\t%t\t%H", $realtime, data);
+   end
+end
+`endif
 
 assign data = fifo_data_out;
 assign rdclk = clk_i;
