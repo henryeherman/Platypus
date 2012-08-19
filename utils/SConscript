@@ -1,0 +1,12 @@
+
+env = Environment()
+env.Program(target="ftditool",
+        LIBS = ['ftdi1','usb-1.0'], 
+        source=['src/ftditool.c'])
+
+env.Append(CFLAGS='-Wall')
+env.Append(CPATH = ['/usr/local/include/',
+                    '/usr/local/include/libusb-1.0',
+                    '/usr/local/include/libftdi1'])
+env.Append(LIBPATH = ['/usr/local/lib/'])
+

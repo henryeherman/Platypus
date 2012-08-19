@@ -953,8 +953,10 @@ Putting the FT2232H into FT245 Mode
 ***********************************
 The FT2232H IC stores configuration data in an EEPROM.  
 
-*TODO*: For now I will be using Windows 7 to configure the FT2232H.  There is a utility with libftdi
-that *may* be able to program the EEPROM.  When I have time I will look into it.
+I have included some notes on the the FT2232H IC, specifically on how to program the EEPROM.
+Please see the :doc:ft2232h if you are a Linux or Mac user and want to program the eeprom from the command line.
+
+The following is valid for windows users:
 
 FTDI provides a utility for programming the EEPROM 
 `FTDI EEPROM Programming Utility <http://www.ftdichip.com/Support/Utilities.htm>`_.  

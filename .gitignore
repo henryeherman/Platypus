@@ -5,8 +5,12 @@
 *.vcd
 *.ignore
 *.pyc
+*.dblite
 fpga/simulation
 fpga/simulation/*
 build
 doc/build/*
+examples/build
+utils/build
 .DS_Store
+

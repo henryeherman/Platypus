@@ -22,6 +22,8 @@ Contents:
    purpose
    buildinst
    fpgadevelopment
+   ft2232h
+   ad7606
    hardwaredesign
    softwarearch
    machinelearningalgo

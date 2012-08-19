@@ -1,4 +1,256 @@
-Overview of the FT2232H
-=======================
+Working with the FT2232H
+========================
 
-This is an awesome chip that can be used for **many** functions.  Here I plan to use one for programming the FPGA and one a a synchronous FIFO to stream the data to the host for further processing.  I have yet to see a multichannel (>8 channel) DAQ with simultaneous sampling be open sourced.  This is how I plan to do it!
+Notes for MAC users
+*******************
+MAC OSX ships with default drivers for the FTDI class of USB devices.
+At first glance this would seem wonderful!
+Lets just use this driver right?! Wrong.
+The driver, atleast to my knowledge only support the chips as UARTs.
+Also I wouldn't even know where to look for documentation.
+Maybe the Apple Developers website?  Too much work.
+So how do we work around this?
+Well to get libusb working we need to unload the kernel driver that ships with you Mac.
+
+.. code-block:: bash
+        
+        $ sudo kextunload /System/Library/Extensions/FTDIUSBSerialDriver.kext
+
+I have included a script in the ``utils`` directory named ``unloadftdi.sh``:
+
+.. code-block:: bash
+        
+        $ utils/unloadftdi.sh
+
+Thats it! Elevate you permission by typing the your password and you are done!
+You should now be able to use libusb with the FT2232H IC.
+
+Want to bring back the Apple driver? Piece of cake.
+
+.. code-block:: bash
+        
+        $ sudo kextload /System/Library/Extensions/FTDIUSBSerialDriver.kext
+
+Or similarly:
+
+.. code-block:: bash
+
+        $ utils/loadftdi.sh
+
+Happy USB hacking!
+
+Notes for Linux Users
+*********************
+Linux has it own can of worms! Unless you want to be typing in you password all the time and ``sudo``-ing it.
+Again I have done the leg work here and provided the necessary udev rules:
+
+.. code-block:: bash
+        
+        $ sudo cp -R udev /etc/
+        $ sudo udevadm --reload-rules
+
+Unplug and replug in the device.
+
+Notes for Windows Users
+***********************
+You need to do some *filter* thingy.  
+I will look into this later so you do not get left out.
+
+
+Considerations for Use
+**********************
+This is an awesome chip that can be used for **many** functions.
+It is a straightforward way if adding High-speed USB connectivity to your embedded projects.
+Some key advantages of this chip include:
+        
+        * FT245 FIFO mode allowing 60MByte/sec data streaming
+        * UART Mode allowing two devices to communicate with a PC over serial connection
+        * A lot of open source software support
+        * Reconfigurable on the fly by eeprom reprogramming
+        * Support for JTAG programming ARM Microprocessors and Xilinx FPGAs
+
+First, lets talk about the some issues that arise with using the FT2232H for this highspeed data project.
+The FT2232H has two interfaces and A and a B.
+When it arrives at your door it is configured to work as two high speed UARTs.
+In UART mode, the data rates are not nearly as high as data is transported in a serial fashion.
+I believe it supports rates like 9600, 14400, 19200, 38400, 57600, 115200, 230400, 460800, and 921600.
+Since this is more or less on off keying at baseband, the maximum data rate would be 115200 kBytes/sec.
+But this is still too slow for our application. Remember, we want >25MBytes/sec!
+The FT2232H does support a synchronous FIFO mode that can reach data rates of 60MBytes/s.
+This FT245 mode as it is called sends data over an 8-bit bidirectional parallel bus.
+Unfortunately, in this mode the second interface, interface B, is disabled as the FT245 mode
+uses resources from both the A and B interfaces.
+This is an issue for us because we would also like to use one of the interfaces to program the Xilinix FPGA.
+
+Switching between modes is not completely trivial because entering FT245 mode requires reprogramming of the
+an attached EEPROM. You could not enter FT245 FIFO mode without an EEPROM.
+In fact, an EEPROM is required to save our device settings to the FT2232H.
+When designing the hardware this should be taken into effect and a EEPROM with 
+that supports a large number of write cycles would be advantageous (1 Million maybe).
+EEPROMs like this DO exist.
+
+Flashing the EEPROM
+*******************
+In the demo section I explain how to use the FT_Prog distributed by FTDI to program the chip.
+This would be far to tedious to use though if we decided to flash the FPGA everytime,
+or need to make frequent bit stream updates during development.
+Luckily, *libftdi* includes everything we need to flash the eeprom with whatever settings we need.
+A good example of this can be found in ``lib/libftdi/example/eeprom.c``.
+It shows how to configure the attached FTDI chip.
+
+Now is a good time to go ahead and take a look this file.
+If it doesn't seem straight forward don't worry, I modified it
+and included another revised version in the ``utils/src/ftditool.c``.
+This version can set the FT2232H IC in either UART mode or FIFO mode
+depending on the command line parameters you pass in.
+
+Lets take a look at the most important section:
+
+.. code-block:: c
+        :linenos:
+        
+        else if (do_245)
+            {
+                ftdi_eeprom_initdefaults(ftdi, NULL, NULL, NULL);
+                f = ftdi_erase_eeprom(ftdi);
+                if (ftdi_set_eeprom_value(ftdi, MAX_POWER, 100) <0)
+                {
+                    fprintf(stderr, "ftdi_set_eeprom_value: %d (%s)\n",
+                            f, ftdi_get_error_string(ftdi));
+                }
+                if (ftdi_set_eeprom_value(ftdi, CHANNEL_A_TYPE, CHANNEL_IS_FIFO) < 0) {
+                        fprintf(stderr, "ftdi_set_eeprom_value: %d (%s)\n",
+                            f, ftdi_get_error_string(ftdi));
+                }
+                if (ftdi_set_eeprom_value(ftdi, CHANNEL_B_TYPE, CHANNEL_IS_FIFO) < 0) {
+                        fprintf(stderr, "ftdi_set_eeprom_value: %d (%s)\n",
+                            f, ftdi_get_error_string(ftdi));
+                }       f = ftdi_erase_eeprom(ftdi);
+                if (ftdi_get_eeprom_value(ftdi, CHIP_TYPE, & value) <0)
+                {
+                    fprintf(stderr, "ftdi_get_eeprom_value: %d (%s)\n",
+                            f, ftdi_get_error_string(ftdi));
+                }
+                if (value == -1)
+                    fprintf(stderr, "No EEPROM\n");
+                else if (value == 0)
+                    fprintf(stderr, "Internal EEPROM\n");
+                else
+                    fprintf(stderr, "Found 93x%02x\n", value);
+                f=(ftdi_eeprom_build(ftdi));
+                if (f < 0)
+                {
+                    fprintf(stderr, "Erase failed: %s",
+                            ftdi_get_error_string(ftdi));
+                    retval = -2;
+                    goto done;
+                }
+                f = ftdi_write_eeprom(ftdi);
+                {
+                    fprintf(stderr, "ftdi_eeprom_decode: %d (%s)\n",
+                            f, ftdi_get_error_string(ftdi));
+                    retval = 1;
+                    goto done;
+                }
+            }
+         
+
+The most important section occurs around line 312 where we set the mode of the IC to FIFO mode.
+
+To build the project we will use ``scons``.  
+If you do not have ``scons`` please see :doc:`buildinst` for instructions on how to install.
+In the root of the platypus source run the following:
+
+.. code-block:: bash
+
+        $ scons utils
+
+This will do the hard work of building the ``ftditool`` utility, 
+and will place it in the root under the ``build/`` directory.
+
+Running this command:
+.. code-block:: bash
+        
+        $ build/ftditool
+
+Will print out the current configuration of your device.
+Assuming you have the default configuration it will look something like this:
+
+.. code-block:: bash
+
+    0x000: 00 00 03 04 10 60 00 07  80 fa 08 00 00 00 9a 02 .....`.. ........
+    0x010: 9c 1c b8 02 00 00 00 00  46 00 02 03 1c 03 44 00 ........ F.....D.
+    0x020: 75 00 61 00 6c 00 20 00  52 00 53 00 32 00 33 00 u.a.l. . R.S.2.3.
+    0x030: 32 00 2d 00 48 00 53 00  02 03 02 03 00 00 00 00 2.-.H.S. ........
+    0x040: 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00 ........ ........
+    0x050: 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00 ........ ........
+    0x060: 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00 ........ ........
+    0x070: 00 00 00 00 00 00 00 00  00 00 00 00 00 00 fd 0c ........ ........
+    VID:     0x0403
+    PID:     0x6010
+    Release: 0x0700
+    Bus Powered: 500 mA
+    Manufacturer: 
+    Product:      Dual RS232-HS
+    Serial:       
+    Checksum      : 0cfd
+    Attached EEPROM: 93x46
+    PNP: 1
+    Channel A has Mode UART
+    Channel B has Mode UART
+    AL has 4 mA drive
+    AH has 4 mA drive
+    BL has 4 mA drive
+    BH has 4 mA drive
+
+Take special note of the Channel A and Channel B modes, as they default to UART.
+To change this run this command:
+
+.. code-block:: bash
+        
+        $ build/ftditool -W
+ 
+If you print out the eeprom contents again, you will get something like this:
+
+.. code-block:: bash
+            
+    0x000: 01 01 03 04 10 60 00 07  80 32 08 00 00 00 9a 02 .....`.. .2......
+    0x010: 9c 1c b8 02 00 00 00 00  46 00 02 03 1c 03 44 00 ........ F.....D.
+    0x020: 75 00 61 00 6c 00 20 00  52 00 53 00 32 00 33 00 u.a.l. . R.S.2.3.
+    0x030: 32 00 2d 00 48 00 53 00  02 03 02 03 00 00 00 00 2.-.H.S. ........
+    0x040: 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00 ........ ........
+    0x050: 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00 ........ ........
+    0x060: 00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00 ........ ........
+    0x070: 00 00 00 00 00 00 00 00  00 00 00 00 00 00 3d 8a ........ ......=.
+    VID:     0x0403
+    PID:     0x6010
+    Release: 0x0700
+    Bus Powered: 100 mA
+    Manufacturer: 
+    Product:      Dual RS232-HS
+    Serial:       
+    Checksum      : 8a3d
+    Attached EEPROM: 93x46
+    PNP: 1
+    Channel A has Mode FIFO
+    Channel B has Mode FIFO
+    AL has 4 mA drive
+    AH has 4 mA drive
+    BL has 4 mA drive
+    BH has 4 mA drive
+
+It is important to note the the Channel A and Channel B modes have changed to FIFO.
+To go back to UART mode use this command:
+
+.. code-block:: bash
+        
+        $ build/ftditool -w
+
+The ``ftditool`` can also be used to reset the chip.
+
+.. code-block:: bash
+        
+        $ build/ftditool -r
+
+This is useful because our FPGA Verilog code can use the ``#RESET`` signal for 
+reseting all the internal logic.
