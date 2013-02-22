@@ -41,7 +41,7 @@ module platypus(
    // End of DCM_SP_inst instantiation
 
    daqtriggerctrl udaqtrig (
-     .clk_i(cnt_r[10]),//clk_i),
+     .clk_i(clk_fast),
      .busy_i(0),
      .conv_clk_o(blinker_o[1]),
      .reset_i(0),

@@ -18,7 +18,7 @@ parameter PAUSE = 2'b11;
 
 //TODO: Calculate these in Hertz using macro
 parameter CYCLES_TIL_TRIGGER_ON = 990;
-parameter CYCLES_TIL_TRIGGER_OFF = 200;
+parameter CYCLES_TIL_TRIGGER_OFF = 10;
 
 input wire clk_i;
 input wire  busy_i;
