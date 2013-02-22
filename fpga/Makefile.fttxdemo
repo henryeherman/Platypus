@@ -17,7 +17,7 @@ CUSTOM_DEFS =
 # Include Other makefiles
 ##########################################
 
-include ../Makefile.common
+include ./Makefile.common
 
 
 ##########################################
@@ -44,9 +44,9 @@ simulator "ISim (VHDL/Verilog)" \
 # Sources
 ##########################################
 TOP_SRCS = \
-fttxdemo.v \
-fttxdemo.ucf \
-ft2232h_count_streamer.v
+demo/fttxdemo.v \
+demo/fttxdemo.ucf \
+demo/ft2232h_count_streamer.v
 
 SOURCES = $(abspath $(TOP_SRCS))
 
@@ -54,7 +54,6 @@ SOURCES = $(abspath $(TOP_SRCS))
 # Process Properties
 ##################################################
 SYNTHESIZE_PROPERTIES = ""
-
 
 TRANSLATE_PROPERTIES = ""
 
@@ -90,8 +89,8 @@ DUMPTYPE = vcd
 #Viewer
 WAVEFORM_VIEWER = gtkwave
 
-SOURCEPATH=../src
-SIMDIR=../simulation
+SOURCEPATH=src
+SIMDIR=simulation
 FTTXTB=ft2232h_txdemo_tb.v \
 		$(SOURCEPATH)/ft2232h.v \
 		$(SOURCEPATH)/ft2232h_tx.v \

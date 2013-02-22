@@ -22,8 +22,8 @@ module ftrxdemo(
     output reg oe_o,
     output reg rd_o,
     input wire pwren_i,   
-    inout wire [7:0] byte_io
-    output wire [7:0] data_rx;    
+    inout wire [7:0] byte_io,
+    output wire [7:0] data_rx    
   );
 
     wire clk_fast;

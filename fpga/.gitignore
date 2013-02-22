@@ -1,4 +1,7 @@
 *.vcd
+cifs*
+_xmsgs
+*.xml
 *.out
 *.swo
 *.swp

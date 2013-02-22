@@ -18,7 +18,7 @@ parameter PAUSE = 2'b11;
 
 //TODO: Calculate these in Hertz using macro
 parameter CYCLES_TIL_TRIGGER_ON = 990;
-parameter CYCLES_TIL_TRIGGER_OFF = 10;
+parameter CYCLES_TIL_TRIGGER_OFF = 200;
 
 input wire clk_i;
 input wire  busy_i;
@@ -26,14 +26,14 @@ output reg conv_clk_o;
 input wire reset_i;
 input wire en_i;
 
-reg [1:0] trigger_state;
-reg [1:0] trigger_nextstate;
+reg [1:0] trigger_state = IDLE;
+reg [1:0] trigger_nextstate = IDLE;
 
-reg [11:0] count_til_trigger_on;
-reg [9:0] count_til_trigger_off;
+reg [11:0] count_til_trigger_on = 0;
+reg [9:0] count_til_trigger_off = 0;
 
 
-always @(posedge clk_i, posedge reset_i, en_i) begin
+always @(posedge clk_i, posedge reset_i, negedge en_i) begin
         if (!en_i) begin
                 trigger_state = PAUSE;
                 count_til_trigger_on = 0;
@@ -66,8 +66,11 @@ always @(posedge clk_i, posedge reset_i, en_i) begin
                         PAUSE:
                                 trigger_state = PAUSE;
                                 // DO NOTHING
-                        default:
+                        default: begin
+                                count_til_trigger_on=0;
+                                count_til_trigger_off=0;
                                 trigger_state = IDLE;
+                        end
                   endcase
           end
 end
@@ -90,6 +93,5 @@ always @(trigger_state) begin
                 end
         endcase
 end
-
 
 endmodule

@@ -117,9 +117,11 @@ int main(int argc, char **argv)
                 serial = optarg;
                 break;
             case 'w':
+                fprintf(stderr, "Configuring for UART mode\n");
                 do_write  = 1;
                 break;
             case 'W':
+                fprintf(stderr, "Configuring for FT245 mode\n");
                 do_245 = 1;
                 break;
             case 'r':

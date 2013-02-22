@@ -1,0 +1,16 @@
+net clk_i	 loc=p43;       # 12 MHz clock from pic  
+net blinker_o[1] loc=p35;       # CHAN15: LED Output from counter
+net blinker_o[0] loc=p34;       # CHAN16: LED Output alive
+#net uclk_i       loc=p44;       # CHAN-CLK: 60MHz USB Fifo clock
+#net txen_i       loc=p68;       # CHAN9: TXE#
+#net wr_o         loc=p37;       # CHAN1: WR#
+#net oe_o         loc=p12;       # CHAN23: OE#
+#net pwren_i      loc=p13;       # CHAN22: PWREN#
+#net byte_io[7]   loc=p73;       # CHAN11
+#net byte_io[6]   loc=p72;       # CHAN10
+#net byte_io[5]   loc=p62;       # CHAN8
+#net byte_io[4]   loc=p61;       # CHAN7
+#net byte_io[3]   loc=p57;       # CHAN6
+#net byte_io[2]   loc=p56;       # CHAN5
+#net byte_io[1]   loc=p52;       # CHAN4
+#net byte_io[0]   loc=p50;       # CHAN3

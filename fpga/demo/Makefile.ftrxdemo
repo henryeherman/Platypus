@@ -103,7 +103,7 @@ FTRXTB=ft2232h_rxdemo_tb.v \
 all: directories default
 #-DTESTRX 
 simulation:
-	$(VERILOG_CMD) -DTESTRX -o $(SIMDIR)/ftrxdemo  $(FTRXTB) 
+	$(VERILOG_CMD) -DTESTRX -DTESTBENCH -o $(SIMDIR)/ftrxdemo  $(FTRXTB) 
 	$(VVP_CMD) $(SIMDIR)/ftrxdemo -$(DUMPTYPE) $(VVP_FLAGS)
 	mv dump.$(DUMPTYPE) $(SIMDIR)/ftrxdemo.$(DUMPTYPE)
 ifdef VIEW

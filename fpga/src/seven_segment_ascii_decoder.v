@@ -1,0 +1,90 @@
+function [6:0] CharToLedDigit;
+    input wire [6:0] asciiChar_i;
+    begin
+        case (asciiChar_i)
+            16'h20: CharToLedDigit = 7'b0000000;  // Space
+            16'h2d: CharToLedDigit = 7'b1000000;  // Minus sign (-)
+            16'h00: CharToLedDigit = 7'b0111111;  // Zero
+            16'h30: CharToLedDigit = 7'b0111111;  // Zero
+            16'h01: CharToLedDigit = 7'b0000110;  // One
+            16'h31: CharToLedDigit = 7'b0000110;  // One
+            16'h02: CharToLedDigit = 7'b1011011;  // Two
+            16'h32: CharToLedDigit = 7'b1011011;  // Two
+            16'h03: CharToLedDigit = 7'b1001111;  // Three
+            16'h33: CharToLedDigit = 7'b1001111;  // Three
+            16'h04: CharToLedDigit = 7'b1100110;  // Four
+            16'h34: CharToLedDigit = 7'b1100110;  // Four
+            16'h05: CharToLedDigit = 7'b1101101;  // Five
+            16'h35: CharToLedDigit = 7'b1101101;  // Five
+            16'h06: CharToLedDigit = 7'b1111101;  // Six
+            16'h36: CharToLedDigit = 7'b1111101;  // Six
+            16'h07: CharToLedDigit = 7'b0000111;  // Seven
+            16'h37: CharToLedDigit = 7'b0000111;  // Seven
+            16'h08: CharToLedDigit = 7'b1111111;  // Eight
+            16'h38: CharToLedDigit = 7'b1111111;  // Eight
+            16'h09: CharToLedDigit = 7'b1101111;  // Nine
+            16'h39: CharToLedDigit = 7'b1101111;  // Nine
+            16'h0A: CharToLedDigit = 7'b1110111;  // A
+            16'h41: CharToLedDigit = 7'b1110111;  // A
+            16'h61: CharToLedDigit = 7'b1110111;  // A
+            16'h0B: CharToLedDigit = 7'b1111100;  // b
+            16'h42: CharToLedDigit = 7'b1111100;  // b
+            16'h62: CharToLedDigit = 7'b1111100;  // b
+            16'h0C: CharToLedDigit = 7'b0111001;  // C
+            16'h0D: CharToLedDigit = 7'b0111001;  // C
+            16'h0E: CharToLedDigit = 7'b0111001;  // C
+            16'h0D: CharToLedDigit = 7'b1011110;  // d
+            16'h44: CharToLedDigit = 7'b1011110;  // d 
+            16'h64: CharToLedDigit = 7'b1011110;  // d
+            16'h0E: CharToLedDigit = 7'b1111001;  // E
+            16'h45: CharToLedDigit = 7'b1111001;  // E
+            16'h65: CharToLedDigit = 7'b1111001;  // E
+            16'h0F: CharToLedDigit = 7'b1110001;  // F
+            16'h46: CharToLedDigit = 7'b1110001;  // F
+            16'h66: CharToLedDigit = 7'b1110001;  // F
+            16'h47: CharToLedDigit = 7'b0111101;  // G
+            16'h67: CharToLedDigit = 7'b0111101;  // G
+            16'h48: CharToLedDigit = 7'b1110100;  // h
+            16'h68: CharToLedDigit = 7'b1110100;  // h
+            16'h49: CharToLedDigit = 7'b0110000;  // I
+            16'h69: CharToLedDigit = 7'b0110000;  // I
+            16'h4a: CharToLedDigit = 7'b0011110;  // J
+            16'h6a: CharToLedDigit = 7'b0011110;  // J
+            16'h4b: CharToLedDigit = 7'b0001000;  // -
+            16'h6b: CharToLedDigit = 7'b0001000;  // -
+            16'h4c: CharToLedDigit = 7'b0111000;  // L
+            16'h6c: CharToLedDigit = 7'b0111000;  // L
+            16'h4d: CharToLedDigit = 7'b0001000;  // -
+            16'h6d: CharToLedDigit = 7'b0001000;  // -
+            16'h4e: CharToLedDigit = 7'b1010100;  // n
+            16'h6e: CharToLedDigit = 7'b1010100;  // n
+            16'h4f: CharToLedDigit = 7'b1011100;  // o
+            16'h6f: CharToLedDigit = 7'b1011100;  // o
+            16'h50: CharToLedDigit = 7'b1110011;  // P
+            16'h70: CharToLedDigit = 7'b1110011;  // P
+            16'h51: CharToLedDigit = 7'b0001000;  // -
+            16'h71: CharToLedDigit = 7'b0001000;  // -
+            16'h52: CharToLedDigit = 7'b1010000;  // r
+            16'h72: CharToLedDigit = 7'b1010000;  // r
+            16'h53: CharToLedDigit = 7'b1101101;  // S
+            16'h73: CharToLedDigit = 7'b1101101;  // S
+            16'h54: CharToLedDigit = 7'b1111000;  // t
+            16'h74: CharToLedDigit = 7'b1111000;  // t
+            16'h55: CharToLedDigit = 7'b0011100;  // U
+            16'h75: CharToLedDigit = 7'b0011100;  // U
+            16'h56: CharToLedDigit = 7'b0001000;  // -
+            16'h76: CharToLedDigit = 7'b0001000;  // -
+            16'h57: CharToLedDigit = 7'b0001000;  // -
+            16'h77: CharToLedDigit = 7'b0001000;  // -
+            16'h58: CharToLedDigit = 7'b0001000;  // - 
+            16'h78: CharToLedDigit = 7'b0001000;  // - 
+            16'h59: CharToLedDigit = 7'b1101110;  // y
+            16'h79: CharToLedDigit = 7'b1101110;  // y
+            16'h5a: CharToLedDigit = 7'b0001000;  // -
+            16'h7a: CharToLedDigit = 7'b0001000;  // -
+            16'h5f: CharToLedDigit = 7'b0001000;  // -
+            default: CharToLedDigit = 7'b0001000;  // -        
+        endcase
+    end
+endfunction
+    

@@ -11,7 +11,7 @@ ifeq ($(ISE_VER),10)
 else
 	ISE_EXT = xise
 endif
-BASE_DIR = $(abspath ..)
+BASE_DIR = $(abspath .)
 ISE_HELPER = xtclsh $(BASE_DIR)/tcl/ise_helper.tcl
 #SANITY_CHECKER = python $(BASE_DIR)/python/check_inout.py
 #TIMING_CHECKER = python $(BASE_DIR)/python/check_timing.py
@@ -72,7 +72,7 @@ $(MCS_FILE): $(BIN_FILE)
 	promgen -w -spi -p mcs -o $(MCS_FILE) -s 4096 -u 0 $(BIT_FILE)
 	
 	
-progxula:
+progxula: 	
 	python $(BASE_DIR)/lib/XSTOOLs/src/xsload.py -f $(BIT_FILE)
 
 
