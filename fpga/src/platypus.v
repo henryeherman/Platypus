@@ -12,15 +12,26 @@
 //#===================================================
 
 module platypus(
-    input wire clk_i, // 12MHz from MCU
-    output wire conv_clk_o,    
-    output rd_o,
-	 output rd_en_o,
-	 output wr_en_o,
-	 input [15:0] db_i,
-	 output [7:0] cs_o,
-	 input busy_i,
-    input reset_i
+	// Global signals
+	input wire clk_i, // 12MHz from MCU
+	input wire reset_i, 
+	input wire en_i, 
+
+	// DAQ Signals
+	output wire daq_conv_clk_o,
+	output wire daq_rd_o,
+	output wire [7:0] daq_cs_o,
+	input wire [15:0] daq_db_i,
+	input wire daq_busy_i,
+	input wire daq_frstdata_i,
+	output wire [2:0] daq_os_sel_o,
+
+	// FT2232H Signals
+	input wire ft_clk_i, // 60MHz clk from FT2232H
+	input wire ft_txe_i,
+	input wire ft_oe_i,
+	output wire ft_wr_o,
+	output wire [7:0] ft_data_o
   );
 
    wire clk_fast;
@@ -48,34 +59,27 @@ module platypus(
    );
    // End of DCM_SP_inst instantiation
 
-/*
-module daqpacketizer(
-input wire clk_i, //Expect 200MHz clock
-input wire en_i,
 
-//AD7606 signals
-output wire conv_clk_o,
-input wire reset_i,
-output wire rd_o,
-output wire [7:0] cs_o,
-input wire [15:0] db_i,
-output wire [15:0] db_o,
-input wire busy_i,
-input wire frstdata_i,
-input wire [2:0] os_sel_i
-);
-*/
-   daqpacketizer udaqpkt (
-     .clk_i(clk_i),
-     .en_i(1),
-	  .db_i(db_i),
-     .conv_clk_o(conv_clk_o),     
-	  .reset_i(reset_i),
-	  .rd_o(rd_o),	  	  
-	  .rd_en_o(rd_en_o),
-	  .wr_en_o(wr_en_o),
-	  .cs_o(cs_o),	  
-	  .busy_i(busy_i)              
-   );
+
+	platypusfifo uplatfifo(
+		.clk_i(clk_i), //Expect 200MHz clock
+		.en_i(en_i),
+		.reset_i(reset_i),
+		// DAQ Signals
+		.daq_conv_clk_o(daq_conv_clk_o),
+		.daq_rd_o(),
+		.daq_rd_en_o(daq_rd_o),
+		.daq_cs_o(daq_cs_o),
+		.daq_db_i(daq_db_i),
+		.daq_busy_i(daq_busy_i),
+		.daq_frstdata_i(daq_frstdata_i),
+		.daq_os_sel_i(daq_os_sel_o),
+		// FT245 Signals
+		.ft_clk_i(ft_clk_i), // 60MHz clk from FT2232H
+		.ft_txe_i(ft_txe_i),
+		.ft_oe_i(ft_oe_i),
+		.ft_wr_o(ft_wr_o),
+		.ft_data_o(ft_data_o)
+	);
 
 endmodule

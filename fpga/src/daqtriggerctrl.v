@@ -40,7 +40,7 @@ always @(posedge clk_i, posedge reset_i, negedge en_i) begin
                 count_til_trigger_off = 0;                
         end else if (reset_i) begin
                 trigger_state = IDLE;
-                count_til_trigger_on = 0;
+                count_til_trigger_on = CYCLES_TIL_TRIGGER_ON/2;
                 count_til_trigger_off = 0;                
         end else begin
                 case(trigger_state)
