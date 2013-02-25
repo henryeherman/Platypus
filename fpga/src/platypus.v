@@ -13,13 +13,21 @@
 
 module platypus(
     input wire clk_i, // 12MHz from MCU
-    output wire [2:0] blinker_o
+    output wire conv_clk_o,    
+    output rd_o,
+	 output rd_en_o,
+	 output wr_en_o,
+	 input [15:0] db_i,
+	 output [7:0] cs_o,
+	 input busy_i,
+    input reset_i
   );
 
    wire clk_fast;
    //wire reset_w;
    reg [32:0] cnt_r = 'b0;
 
+   wire [7:0] cs_w;
 	
 	always @(posedge clk_fast) begin
 		cnt_r = cnt_r+1;
@@ -36,20 +44,38 @@ module platypus(
    ) DCM_SP_inst (      
       .CLKFX(clk_fast),   // DCM CLK synthesis out (M/D)      
       .CLKIN(clk_i),   // Clock input (from IBUFG, BUFG or DCM)      
-      .RST(0)        // DCM asynchronous reset input
+      .RST(reset_i)        // DCM asynchronous reset input
    );
    // End of DCM_SP_inst instantiation
 
-   daqtriggerctrl udaqtrig (
-     .clk_i(clk_fast),
-     .busy_i(0),
-     .conv_clk_o(blinker_o[1]),
-     .reset_i(0),
-     .en_i(1)
+/*
+module daqpacketizer(
+input wire clk_i, //Expect 200MHz clock
+input wire en_i,
+
+//AD7606 signals
+output wire conv_clk_o,
+input wire reset_i,
+output wire rd_o,
+output wire [7:0] cs_o,
+input wire [15:0] db_i,
+output wire [15:0] db_o,
+input wire busy_i,
+input wire frstdata_i,
+input wire [2:0] os_sel_i
+);
+*/
+   daqpacketizer udaqpkt (
+     .clk_i(clk_i),
+     .en_i(1),
+	  .db_i(db_i),
+     .conv_clk_o(conv_clk_o),     
+	  .reset_i(reset_i),
+	  .rd_o(rd_o),	  	  
+	  .rd_en_o(rd_en_o),
+	  .wr_en_o(wr_en_o),
+	  .cs_o(cs_o),	  
+	  .busy_i(busy_i)              
    );
 
-
-   //assign blinker_o[1] = cnt_r[25];
-   assign blinker_o[0] = cnt_r[25];
-   //assign blinker_o[1] = 1;
 endmodule

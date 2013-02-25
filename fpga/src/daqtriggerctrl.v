@@ -22,7 +22,7 @@ parameter CYCLES_TIL_TRIGGER_OFF = 10;
 
 input wire clk_i;
 input wire  busy_i;
-output reg conv_clk_o;
+output reg conv_clk_o=1;
 input wire reset_i;
 input wire en_i;
 

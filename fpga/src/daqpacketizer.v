@@ -4,187 +4,59 @@
 
 
 module daqpacketizer(
-clk_i,
-en_i,
+input wire clk_i, //Expect 200MHz clock
+input wire en_i,
 
 //AD7606 signals
-conv_clk_o,
-reset_i,
-rd_o,
-cs_o,
-db_i,
-db_o,
-busy_i,
-frstdata_i,
-os_sel_i,
-
-//Fifo out signals
-wrclk_o,
-rdreq_o,
-fifo_out_clk,
-fifo_out_empty,
-fifo_out_req,
-fifo_out_data,
+output wire conv_clk_o,
+input wire reset_i,
+output wire rd_o,
+output wire rd_en_o,
+output wire wr_en_o,
+output wire [7:0] cs_o,
+input wire [15:0] db_i,
+output wire [7:0] db_o,
+input wire busy_i,
+input wire frstdata_i,
+input wire [2:0] os_sel_i
 );
 
-parameter ADCCOUNT = 8;
-parameter DAQCOUNT = 8;
+parameter ADC_COUNT = 8;
+parameter DAQ_COUNT = 8;
 
 parameter WAIT_ON_TRIG = 3'b000;
 parameter WAIT_ON_BUSY_HIGH = 3'b001;
 parameter WAIT_ON_BUSY_LOW = 3'b010;
 parameter PREAMBLE = 3'b011;
-parameter PACKETCOUNT = 3'b100;
-parameter READ = 3'b101;
-parameter READ_END = 3'b110;
-
-// State variables control 
-reg [2:0] read_state;
-reg [2:0] read_nextstate;
-
-reg [3:0] adc_count;
+parameter PACKET_COUNT = 3'b100;
+parameter READ_ADC = 3'b101;
+parameter READ_DONE = 3'b110;
 
 
-input wire clk_i; //Expect 200MHz clock
-input wire [2:0] os_sel_i;
-input wire frstdata_i;
-input wire reset_i;
-input wire en_i;
-output wire [15:0] db_o;
-output wire rdreq_o;
-output wire wrclk_o;
 
-//  TEMPS
-input wire fifo_out_clk;
-output wire fifo_out_empty;
-input wire fifo_out_req;
-output wire [7:0] fifo_out_data;
+reg [2:0] read_state_r;
+reg [2:0] read_nextstate_r;
 
-//AD7606 Signals
-output wire conv_clk_o;
-input wire busy_i;
-output wire rd_o;
-output reg [8:0] cs_o;
-input wire [15:0] db_i;
-reg [15:0] header_r;
+reg [3:0] adc_count_r;
+reg [3:0] daq_count_r;
 
+reg[15:0] packetcount_r;
 
-wire rdclk_w;
-reg rd_en;
+reg cs_en_r;
+reg rd_en_r;
 
-//Fifo Signals
-wire wrfull;
-wire wrclk_w;
-reg wr_en; //used to control header
+wire read_done_w;
 
-reg [3:0] clkcount;
-reg [9:0] count_til_trigger_on;
-reg [9:0] count_til_trigger_off;
+wire [7:0] cs_temp_w;
 
-reg [3:0] daqcount;
-
-reg [15:0] packetcount_r;
-
-always @(reset_i) begin
-  cs_o<=9'b111111111;        
-end
-
-
-always @(negedge wrclk_w, reset_i) begin
-  if (reset_i) begin
-    read_nextstate <= WAIT_ON_TRIG;
-    read_state <= WAIT_ON_TRIG;
-    packetcount_r = 0;
-  end  begin
-    read_state <= read_nextstate;
-  end        
-end
-
-
-always @(conv_clk_o, busy_i, read_state, adc_count) begin
-  case(read_state)
-    WAIT_ON_TRIG: begin
-      cs_o<=9'b111111111;
-      rd_en = 0;
-      wr_en = 0;
-      daqcount = 0;
-      if(conv_clk_o == `LO)
-        read_nextstate = WAIT_ON_BUSY_HIGH;
-    end
-    WAIT_ON_BUSY_HIGH: begin
-      if (busy_i == `HI) begin
-        read_nextstate = WAIT_ON_BUSY_LOW;
-      end
-    end
-    WAIT_ON_BUSY_LOW: begin
-      if (busy_i == `LO) begin
-        read_nextstate = PREAMBLE;
-        end
-    end
-    PREAMBLE: begin      
-      packetcount_r = packetcount_r + 1;
-      header_r = 16'hAAAA;
-      read_nextstate = PACKETCOUNT;       
-      wr_en = 1;
-      daqcount = 0;      
-    end
-    PACKETCOUNT: begin
-     header_r = packetcount_r;
-     read_nextstate = READ; 
-    end
-    READ: begin
-      wr_en = 0;
-      cs_o = 9'b111111111 & (~(1 << daqcount));
-      rd_en = 1;                              
-      if (adc_count > 7) begin
-        read_nextstate = READ_END;
-        daqcount = daqcount + 1;
-      end
-    end
-    READ_END: begin
-      rd_en  <= 0;
-      if (daqcount < DAQCOUNT) begin
-        adc_count <= 0;
-        read_nextstate <= READ;
-      end else if (adc_count > 8) begin
-        if(busy_i)
-          read_nextstate = WAIT_ON_BUSY_LOW;
-        else
-          read_nextstate = WAIT_ON_TRIG;
-
-        cs_o<=9'b111111111;
-      end
-    end
-    default: begin
-        read_nextstate = WAIT_ON_TRIG;
-    end
-  endcase
-end 
-
-
-always @(posedge wrclk_w) begin
-  if (read_state == READ || read_state == READ_END) begin
-    if (adc_count > 8) 
-      adc_count = 0;
-    else
-      adc_count = adc_count +1;
-  end else
-    adc_count = 0;
-                        
-end
-
-
-wire wrreq_w = rd_en | wr_en; 
-assign db_o = wr_en ? header_r : db_i;
-assign wrclk_o = wrclk_w;
-assign rdreq_o = rd_en;
+wire [1:0] a;
 
 daqrdclk udaqrdclk(
   .clk_i(clk_i),
   .reset_i(reset_i),
-  .clk_en_o(rd_o),
-  .clk_o(wrclk_w),
-  .en_i(rd_en)
+  .clk_en_o(rd_en_o),
+  .clk_o(rd_o),
+  .en_i(rd_en_r)
 );
 
 daqtriggerctrl udaqtrig(
@@ -195,17 +67,96 @@ daqtriggerctrl udaqtrig(
   .en_i(en_i)
 );
 
+assign cs_temp_w = 8'b11111111 & (~(1<<daq_count_r));
+assign wr_en_o = &cs_o;
+assign cs_o = cs_en_r ? cs_temp_w : 8'b11111111;
 
-daqFifo #(.ADDRESS_WIDTH(6)) ufifo (
-  .clear(reset_i),
-  .data(db_o),
-  .wrreq(wrreq_w),
-  .wrclk(wrclk_w),
-  .q(fifo_out_data),
-  .rdclk(fifo_out_clk),
-  .rdreq(fifo_out_req),
-  .rdempty(fifo_out_empty)
+always@(negedge rd_o, posedge reset_i) begin
+	if(reset_i) begin
+		read_state_r = WAIT_ON_TRIG;
+	end else begin
+		read_state_r = read_nextstate_r;
+	end	
+end
+
+assign read_done_w = (daq_count_r > 7) & (adc_count_r > 7);
+
+always@(*) begin
+	case(read_state_r)
+	WAIT_ON_TRIG: begin		
+		cs_en_r = 0;
+		rd_en_r = 0;
+		if(!conv_clk_o )		
+			read_nextstate_r = WAIT_ON_BUSY_HIGH;		
+	end
+	WAIT_ON_BUSY_HIGH:
+		if(busy_i)
+			read_nextstate_r = WAIT_ON_BUSY_LOW;			
+	WAIT_ON_BUSY_LOW:
+		// One more cycle ... is this needed?
+		if(!busy_i)		
+			read_nextstate_r = READ_ADC;						
+	READ_ADC: begin
+			rd_en_r = 1;
+			cs_en_r = 1;						
+			if(read_done_w) begin
+				rd_en_r = 0;
+				cs_en_r = 0;						
+				read_nextstate_r = READ_DONE;			
+			end
+	end
+	READ_DONE: begin	
+		if(busy_i)
+			read_nextstate_r = WAIT_ON_BUSY_HIGH;
+		else
+			read_nextstate_r = WAIT_ON_TRIG;						
+	end
+	default: 
+		read_nextstate_r = WAIT_ON_TRIG;					
+	endcase	
+end
+
+
+always@(negedge rd_o) begin
+	case(read_state_r)
+	READ_ADC: begin
+		if(adc_count_r<8)
+			adc_count_r = adc_count_r + 1;
+		else begin
+			adc_count_r = 1;
+			daq_count_r = daq_count_r + 1;			
+		end
+	end
+	READ_DONE: begin
+		adc_count_r = 0;
+		daq_count_r = 0;	
+	end
+	default: begin
+		adc_count_r = 0;
+		daq_count_r = 0;
+	end
+	endcase
+end
+
+wire full_w;
+wire wr_en_full_w;
+
+assign wr_en_full_w = !wr_en_o & !full_w;
+
+async_fifo ufifo (
+  .rst(reset_i), // input rst
+  .wr_clk(rd_o), // input wr_clk
+  .rd_clk(), // input rd_clk
+  .din(db_i), // input [15 : 0] din
+  .wr_en(wr_en_full_w), // input wr_en
+  .rd_en(), // input rd_en
+  .dout(), // output [7 : 0] dout
+  .full(full_w), // output full
+  .overflow(), // output overflow
+  .empty(), // output empty
+  .underflow() // output underflow
 );
+
 
 
 endmodule

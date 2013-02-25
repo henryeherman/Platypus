@@ -9,9 +9,9 @@ _xmsgs
 *.ignore
 *.pyc
 *.dblite
+build
 fpga/simulation
 fpga/simulation/*
-build
 doc/build/*
 examples/build
 utils/build

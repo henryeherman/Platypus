@@ -18,18 +18,18 @@ reg clk_r;
 
 // Generate pulses for read clock
 // Expect 200MHz Clockin
-always@(posedge clk_i, reset_i) begin
+always@(posedge clk_i, posedge reset_i) begin
         if(reset_i) begin
                 clk_r <= `LO;
-                clkcount <= `LO;
+                clkcount <= 0;
         end else begin
-                clkcount = clkcount + 1;
+                clkcount <= clkcount + 1;
                 if (clkcount > WAITHIGH && clk_r==`HI) begin
                         clk_r <= `LO;
-                        clkcount <= `LO;
+                        clkcount <= 0;
                 end else if(clkcount >WAITLOW && clk_r ==`LO) begin
                         clk_r <= `HI;
-                        clkcount <= `LO;
+                        clkcount <= 0;
                 end
         end
 end

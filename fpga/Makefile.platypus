@@ -45,7 +45,12 @@ simulator "ISim (VHDL/Verilog)" \
 ##########################################
 TOP_SRCS = \
 src/platypus.v \
+src/daqpacketizer.v \
+src/daqFifo.v \
 src/daqtriggerctrl.v \
+src/daqrdclk.v \
+src/aFifo.v \
+src/GrayCounter.v \
 src/platypus.ucf
 
 SOURCES = $(abspath $(TOP_SRCS))

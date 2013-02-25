@@ -52,8 +52,12 @@ module daqFifo
     //'q' logic:
     reg clkcount;
 
-    always @(posedge rdclk)
-           rdclk_slow = !rdclk_slow;
+    always @(posedge rdclk, posedge clear)
+
+      if (clear)
+        rdclk_slow = 0;
+      else 
+        rdclk_slow = !rdclk_slow;
 
     
     always @ (posedge rdclk)
@@ -108,7 +112,6 @@ module daqFifo
     always @ (Set_Status, Rst_Status, clear) //D Latch w/ Asynchronous Clear & Preset.
         if (Rst_Status | clear) begin
             Status = 0;  //Going 'Empty'.
-            rdclk_slow = 0;
         end else if (Set_Status)
             Status = 1;  //Going 'Full'.
             
@@ -116,10 +119,11 @@ module daqFifo
     assign PresetFull = Status & EqualAddresses;  //'Full' Fifo.
     
     always @ (posedge wrclk, posedge PresetFull, negedge Status) //D Flip-Flop w/ Asynchronous Preset.
+    //always @ (posedge wrclk) // negedge Status) //D Flip-Flop w/ Asynchronous Preset.
         if (PresetFull)
-            wrfull <= 1;
+            wrfull = 1;
         else
-            wrfull <= 0;
+            wrfull = 0;
             
     //'rdempty' logic for the reading port:
     assign PresetEmpty = ~Status & EqualAddresses;  //'Empty' Fifo.

@@ -128,6 +128,7 @@ daqpkt_tb:
 	$(VERILOG_CMD) -o $(SIMDIR)/daqpacketizer_tb $(DAQPKTBFILES)
 	$(VVP_CMD) $(SIMDIR)/daqpacketizer_tb -$(DUMPTYPE) $(VVP_FLAGS)
 	mv dump.$(DUMPTYPE) $(SIMDIR)/daqpacketizer_tb.$(DUMPTYPE)
+
 ifdef VIEW
 	$(WAVEFORM_VIEWER) $(SIMDIR)/daqpacketizer_tb.$(DUMPTYPE)
 endif
