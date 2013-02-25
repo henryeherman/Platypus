@@ -42,6 +42,9 @@ reg [3:0] daq_count_r;
 
 reg[15:0] packetcount_r;
 
+wire [15:0] db_w;
+
+reg preamble_en_r;
 reg cs_en_r;
 reg rd_en_r;
 
@@ -68,7 +71,7 @@ daqtriggerctrl udaqtrig(
 );
 
 assign cs_temp_w = 8'b11111111 & (~(1<<daq_count_r));
-assign wr_en_o = &cs_o;
+assign wr_en_o = (&cs_o) & !preamble_en_r;
 assign cs_o = cs_en_r ? cs_temp_w : 8'b11111111;
 
 always@(negedge rd_o, posedge reset_i) begin
@@ -81,11 +84,15 @@ end
 
 assign read_done_w = (daq_count_r > 7) & (adc_count_r > 7);
 
+
+assign db_w = preamble_en_r ? 16'hAAAA : db_i;
+
 always@(*) begin
 	case(read_state_r)
 	WAIT_ON_TRIG: begin		
 		cs_en_r = 0;
 		rd_en_r = 0;
+		preamble_en_r=0;
 		if(!conv_clk_o )		
 			read_nextstate_r = WAIT_ON_BUSY_HIGH;		
 	end
@@ -94,11 +101,17 @@ always@(*) begin
 			read_nextstate_r = WAIT_ON_BUSY_LOW;			
 	WAIT_ON_BUSY_LOW:
 		// One more cycle ... is this needed?
-		if(!busy_i)		
-			read_nextstate_r = READ_ADC;						
+		if(!busy_i)	begin	
+			preamble_en_r = 1;
+			read_nextstate_r = PREAMBLE;
+		end
+	PREAMBLE: begin
+		read_nextstate_r = READ_ADC;
+	end
 	READ_ADC: begin
 			rd_en_r = 1;
-			cs_en_r = 1;						
+			cs_en_r = 1;		
+			preamble_en_r = 0;			
 			if(read_done_w) begin
 				rd_en_r = 0;
 				cs_en_r = 0;						
@@ -147,7 +160,7 @@ async_fifo ufifo (
   .rst(reset_i), // input rst
   .wr_clk(rd_o), // input wr_clk
   .rd_clk(), // input rd_clk
-  .din(db_i), // input [15 : 0] din
+  .din(db_w), // input [15 : 0] din
   .wr_en(wr_en_full_w), // input wr_en
   .rd_en(), // input rd_en
   .dout(), // output [7 : 0] dout
