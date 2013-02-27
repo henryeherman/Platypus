@@ -1,7 +1,31 @@
-net clk_i	 loc=p43;       # 12 MHz clock from pic  
-net rd_o      loc=p50;       # CHAN3
-//net cs_o         loc=p52;       # CHAN4
-net conv_clk_o   loc=p56;       # CHAN5
+net clk_i	         loc=p184;       # 12 MHz clock from pic  
+
+//AD7606 Signals
+net daq_conv_clk_o   loc=p74; #CONVST
+//net blink_o				loc=p18;
+net daq_reset_o 		loc=p69;#loc=p30;
+net daq_stdby_o 		loc=p75; #DASSTBY
+net daq_busy_i 		loc=p115;#BSY1
+
+net daq_os_sel_o[0]  loc=p78; #OS0
+net daq_os_sel_o[1]  loc=p77; #OS1
+net daq_os_sel_o[2]  loc=p76; #OS2
+
+net daq_rd_o			loc=p68; #DASRD
+
+net daq_cs_o[0]		loc=p116;#DASCS1
+
+
+
+# Testpoints
+net daq_busy_tp 		loc=p30;  #USR20
+net daq_conv_clk_tp  loc=p40;  #GPIO70
+net daq_rd_tp		loc=p28;	 #GPIO75
+net daq_rd_en_tp	loc=p18;  #USR11
+net tp		loc=p19; #USR12
+
+
+
 #net uclk_i       loc=p44;       # CHAN-CLK: 60MHz USB Fifo clock
 #net txen_i       loc=p68;       # CHAN9: TXE#
 #net wr_o         loc=p37;       # CHAN1: WR#

@@ -12,6 +12,7 @@
 //#===================================================
 
 module platypusfifo(
+	output tp,
 	input wire clk_i, //Expect 200MHz clock
 	input wire en_i,
 	input wire reset_i,
@@ -66,6 +67,7 @@ module platypusfifo(
 
 
 	daqpacketizer upkt(
+		.tp(tp),
 		.clk_i(clk_i), //Expect 200MHz clock
 		.en_i(en_i),
 		.reset_i(reset_i),
@@ -86,7 +88,8 @@ module platypusfifo(
 		.fifo_wr_en_o(fifo_wr_en_w),
 		.fifo_wr_full_i(fifo_wr_full_w)  // Change when move fifo to new .v file
 	);
-
+	
+	
 	async_fifo ufifo (
 	  .rst(reset_i), // input rst
 	  .wr_clk(fifo_wr_clk_w), // input wr_clk
@@ -100,6 +103,6 @@ module platypusfifo(
 	  .empty(fifo_rd_empty_w), // output empty
 	  .underflow() // output underflow
 	);
-
+	
 
 endmodule

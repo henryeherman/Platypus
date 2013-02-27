@@ -11,6 +11,7 @@ _xmsgs
 *.dblite
 build
 fpga/simulation
+ipcore_dir
 fpga/simulation/*
 doc/build/*
 examples/build

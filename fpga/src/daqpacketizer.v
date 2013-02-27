@@ -30,10 +30,13 @@ input wire frstdata_i,
 input wire [2:0] os_sel_i,
 
 //FIFO Signals
-input wire fifo_wr_clk_o,
+output wire fifo_wr_clk_o,
 output wire [15:0] fifo_wr_data_o,
 output wire fifo_wr_en_o,
-input wire fifo_wr_full_i
+input wire fifo_wr_full_i,
+
+output wire tp
+
 );
 /*
 
@@ -53,8 +56,8 @@ parameter READ_DONE = 3'b110;
 wire wr_en_o;
 
 // DAQ Reading States
-reg [2:0] read_state_r;
-reg [2:0] read_nextstate_r;
+reg [2:0] read_state_r = WAIT_ON_TRIG;
+reg [2:0] read_nextstate_r = WAIT_ON_TRIG;
 
 // DAQ Counters
 reg [4:0] adc_count_r;
@@ -108,6 +111,11 @@ assign read_done_w = (daq_count_r > (DAQ_COUNT-1));
 assign fifo_wr_data_o = header_en_r ? (preamble_en_r ? `PREAMBLE_VAL : pkt_counter_r) 
 								  : db_i;
 
+
+assign tp = busy_i;//1;//(read_state_r == WAIT_ON_TRIG);
+
+
+
 // Packet Construction State Machine
 always@(negedge rd_o, posedge reset_i) begin
 	if(reset_i) begin
@@ -126,7 +134,9 @@ always@(*) begin
 		preamble_en_r = 0;
 		header_en_r = 0;
 		if(!conv_clk_o )		
-			read_nextstate_r = WAIT_ON_BUSY_HIGH;		
+			read_nextstate_r = WAIT_ON_BUSY_HIGH;
+		if(busy_i)
+			read_nextstate_r = WAIT_ON_BUSY_LOW;
 	end
 	WAIT_ON_BUSY_HIGH: begin
 		preamble_en_r = 0;

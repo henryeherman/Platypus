@@ -4,7 +4,7 @@
 
 module daqrdclk
 #(parameter     WAITHIGH=2,
-                WAITLOW=3)
+                WAITLOW=2)
 
 (input wire clk_i,
 input wire reset_i,
